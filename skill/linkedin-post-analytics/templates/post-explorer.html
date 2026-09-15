@@ -1,0 +1,364 @@
+<title>Post Explorer</title>
+<style>
+:root{
+  color-scheme:light;
+  --plane:#f5f6f8; --surface:#ffffff; --ink:#12151a; --ink-2:#565c66; --muted:#858b95;
+  --grid:#e5e8ed; --axis:#c5cad2; --ring:rgba(18,21,26,.10); --hover:rgba(42,120,214,.08);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --other:#b9bdc5;
+  --pos:#2a78d6; --neg:#e34948; --mid:#f0efec;
+  --q0:#f3f6fa; --q1:#cde2fb; --q2:#9ec5f4; --q3:#6da7ec; --q4:#3987e5; --q5:#256abf; --q6:#184f95; --q7:#0d366b;
+  --tip-bg:#12151a; --tip-ink:#ffffff;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --plane:#0e1013; --surface:#181b20; --ink:#f2f3f5; --ink-2:#b9bdc5; --muted:#868b94;
+    --grid:#282c33; --axis:#3a3f48; --ring:rgba(255,255,255,.10); --hover:rgba(57,135,229,.14);
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --other:#4a4f58;
+    --pos:#3987e5; --neg:#e66767; --mid:#383835;
+    --q0:#1d2129; --q1:#0d366b; --q2:#104281; --q3:#184f95; --q4:#256abf; --q5:#3987e5; --q6:#6da7ec; --q7:#9ec5f4;
+    --tip-bg:#f2f3f5; --tip-ink:#12151a;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --plane:#0e1013; --surface:#181b20; --ink:#f2f3f5; --ink-2:#b9bdc5; --muted:#868b94;
+  --grid:#282c33; --axis:#3a3f48; --ring:rgba(255,255,255,.10); --hover:rgba(57,135,229,.14);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --other:#4a4f58;
+  --pos:#3987e5; --neg:#e66767; --mid:#383835;
+  --q0:#1d2129; --q1:#0d366b; --q2:#104281; --q3:#184f95; --q4:#256abf; --q5:#3987e5; --q6:#6da7ec; --q7:#9ec5f4;
+  --tip-bg:#f2f3f5; --tip-ink:#12151a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--plane);color:var(--ink);font:15px/1.5 "Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;padding-block:32px 64px;padding-inline:clamp(16px,4vw,40px)}
+.wrap{max-width:1140px;margin:0 auto}
+h1{font-size:clamp(28px,4vw,40px);line-height:1.05;letter-spacing:-.02em;margin:0 0 8px;text-wrap:balance}
+.sub{color:var(--ink-2);margin:0;max-width:68ch}
+.sub b{color:var(--ink);font-weight:600}
+h2{font-size:16px;font-weight:600;margin:0;letter-spacing:-.01em}
+.note{color:var(--muted);font-size:13px;margin:2px 0 0}
+.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+.controls{background:var(--surface);border:1px solid var(--ring);border-radius:8px;padding:14px 18px;margin:24px 0 16px;display:grid;gap:10px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.row .lbl{font-size:12px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.06em;font-weight:500;min-width:88px}
+.chip{border:1px solid var(--ring);background:var(--surface);color:var(--ink);border-radius:999px;padding:4px 11px;font:inherit;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.chip i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.chip:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
+select{font:inherit;font-size:13px;padding:5px 10px;border:1px solid var(--ring);border-radius:6px;background:var(--plane);color:var(--ink)}
+.status{font-size:13px;color:var(--ink-2)}
+.status b{color:var(--ink);font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--ring);border-radius:8px;padding:16px 18px 12px;min-width:0}
+.panel.wide{grid-column:1/-1}
+.panel header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.ax{font:11px "JetBrains Mono",ui-monospace,monospace;fill:var(--muted)}
+.gl{stroke:var(--grid);stroke-width:1}
+.bl{stroke:var(--axis);stroke-width:1}
+.lab{font:11px "Public Sans",system-ui,sans-serif;fill:var(--ink-2)}
+.lab.strong{fill:var(--ink);font-weight:600}
+.axt{font:12px "Public Sans",system-ui,sans-serif;fill:var(--ink-2)}
+circle.pt{cursor:pointer;stroke:var(--surface);stroke-width:1.5}
+circle.pt:hover{stroke:var(--ink);stroke-width:2}
+.tip{position:fixed;pointer-events:none;background:var(--tip-bg);color:var(--tip-ink);font-size:12px;line-height:1.4;padding:8px 10px;border-radius:6px;max-width:300px;z-index:20;opacity:0;transition:opacity .08s}
+.tip b{font-weight:600}
+.tip.on{opacity:1}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-weight:500;color:var(--ink-2);padding:8px 8px;border-bottom:1px solid var(--axis);white-space:nowrap}
+td{padding:8px 8px;border-bottom:1px solid var(--grid);vertical-align:top}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl-wrap{overflow-x:auto}
+.matrix td.cell{text-align:center;font-variant-numeric:tabular-nums;border-radius:4px;padding:10px 6px;min-width:76px}
+.matrix td.cell small{display:block;font-size:11px;opacity:.75}
+.matrix th.rh{font-weight:500;color:var(--ink);white-space:nowrap}
+.small{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:820px){.small{grid-template-columns:1fr}}
+.small h3{font-size:13px;font-weight:500;color:var(--ink-2);margin:0 0 4px;display:flex;align-items:center;gap:6px}
+.small h3 i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.readme{color:var(--ink-2);font-size:13px;max-width:78ch;margin:0 0 4px}
+.foot{color:var(--muted);font-size:12px;margin-top:28px;max-width:80ch}
+a{color:var(--s1)}
+@media (prefers-reduced-motion:reduce){.tip{transition:none}}
+</style>
+
+<div class="wrap">
+  <h1>Post Explorer</h1>
+  <p class="sub" id="sub"></p>
+
+  <div class="controls">
+    <div class="row"><span class="lbl">Outcome</span>
+      <select id="outcome" aria-label="Outcome">
+        <option value="imp">Impressions</option>
+        <option value="sav1k">Saves per 1,000 impressions</option>
+        <option value="rate">Engagement rate</option>
+        <option value="com1k">Comments per 1,000 impressions</option>
+        <option value="rep1k">Reposts per 1,000 impressions</option>
+        <option value="fol">Followers gained</option>
+      </select>
+      <span class="lbl" style="margin-left:12px">Color by</span>
+      <select id="colorby" aria-label="Color by">
+        <option value="topic">Topic</option>
+        <option value="wd">Weekday</option>
+        <option value="media">Media</option>
+        <option value="band">Length band</option>
+      </select>
+    </div>
+    <div class="row" id="f-topic"><span class="lbl">Topic</span></div>
+    <div class="row" id="f-wd"><span class="lbl">Weekday</span></div>
+    <div class="row" id="f-media"><span class="lbl">Media</span></div>
+    <div class="row" id="f-band"><span class="lbl">Length</span></div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="grid">
+    <section class="panel wide">
+      <header><div><h2>Length against outcome, every post</h2><p class="note">Each dot is a post. Both axes are logarithmic when the outcome is a count. Hover for the post, click to open it on LinkedIn.</p></div><div class="legend" id="lg-scatter"></div></header>
+      <div id="c-scatter"></div>
+    </section>
+
+    <section class="panel">
+      <header><div><h2>Topic by length</h2><p class="note">Median outcome for posts in the cell, with the post count. Cells with fewer than 4 posts are faded.</p></div></header>
+      <div class="tbl-wrap" id="m-topic-len"></div>
+    </section>
+    <section class="panel">
+      <header><div><h2>Weekday by time of day</h2><p class="note">__TZ_LABEL__ time. Same reading: median outcome and post count.</p></div></header>
+      <div class="tbl-wrap" id="m-wd-hour"></div>
+    </section>
+
+    <section class="panel wide">
+      <header><div><h2>What moves with the outcome</h2><p class="note">Spearman rank correlation between each feature and the selected outcome across the filtered posts. Direction and strength only; nothing here proves cause. Features with fewer than 8 matching posts are hidden.</p></div></header>
+      <div id="c-corr"></div>
+    </section>
+
+    <section class="panel wide">
+      <header><div><h2>Same length, different day or format</h2><p class="note">Controlled comparisons: within each length band, so length cannot explain the gap. Median outcome and count.</p></div></header>
+      <div class="tbl-wrap" id="m-control"></div>
+    </section>
+
+    <section class="panel wide">
+      <header><div><h2>Topics over time</h2><p class="note">Median outcome per month for posts on each topic. Months with a single post are drawn hollow.</p></div></header>
+      <div class="small" id="c-trend"></div>
+    </section>
+  </div>
+  <p class="foot" id="foot"></p>
+</div>
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script id="data" type="application/json">__EXPLORER__</script>
+<script>
+const RAW = JSON.parse(document.getElementById('data').textContent);
+const TZ = __TZ_JS__;
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const TOPICS = __TOPICS_ALL__;
+const BANDS = [['<300', 0, 300], ['300 to 1k', 300, 1000], ['1k to 2k', 1000, 2000], ['2k+', 2000, Infinity]];
+const HOURS = [['before 12', 0, 12], ['12 to 15', 12, 15], ['15 to 17', 15, 17], ['17 to 19', 17, 19], ['19 onward', 19, 24]];
+const MEDIA = [['text', 'Text or link'], ['image', 'Image'], ['video', 'Video'], ['document', 'PDF'], ['poll', 'Poll'], ['media_other', 'Other upload']];
+const OUT = {
+  imp: {name: 'Impressions', f: p => p.imp, fmt: v => compact(v), log: true},
+  sav1k: {name: 'Saves per 1k', f: p => 1000 * p.sav / p.imp, fmt: v => v.toFixed(1), log: false},
+  rate: {name: 'Engagement rate', f: p => 100 * p.eng / p.imp, fmt: v => v.toFixed(2) + '%', log: false},
+  com1k: {name: 'Comments per 1k', f: p => 1000 * p.com / p.imp, fmt: v => v.toFixed(1), log: false},
+  rep1k: {name: 'Reposts per 1k', f: p => 1000 * p.rep / p.imp, fmt: v => v.toFixed(1), log: false},
+  fol: {name: 'Followers gained', f: p => p.fol, fmt: v => fmt(Math.round(v)), log: true},
+};
+const POSTS = RAW.map(p => {
+  const utc = new Date(p.d.replace(' ', 'T') + 'Z');
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {timeZone: TZ, hour12: false, weekday: 'short', hour: '2-digit'}).formatToParts(utc).map(x => [x.type, x.value]));
+  const wd = DAYS.indexOf(parts.weekday), hr = +parts.hour % 24;
+  const topics = TOPICS.map(([n, rx]) => rx.test(p.text) ? n : null).filter(Boolean);
+  const first = p.text.split('\n')[0];
+  return {...p, utc, wd, hr, topics, month: p.d.slice(0, 7),
+    band: BANDS.findIndex(b => p.len >= b[1] && p.len < b[2]),
+    hband: HOURS.findIndex(h => hr >= h[1] && hr < h[2]),
+    feats: {
+      'Length (chars)': p.len,
+      'Paragraphs': p.text.split(/\n\s*\n/).length,
+      'Hour of day': hr,
+      'Published Friday': +(wd === 4),
+      'Published weekend': +(wd >= 5),
+      'Image attached': +(p.media === 'image'),
+      'Any native media': +(p.media !== 'text'),
+      'Hashtags used': +(p.tags.length > 0),
+      'Question in first line': +first.includes('?'),
+      'Number in first line': +/\d/.test(first),
+      'Link in text': +/lnkd\.in|https?:\/\//.test(p.text),
+      'First person "I"': (p.text.match(/\bI\b/g) || []).length,
+      ...Object.fromEntries(TOPICS.map(([n]) => ['Topic: ' + n, +topics.includes(n)])),
+    }};
+});
+const TIP = document.getElementById('tip');
+const fmt = n => n.toLocaleString('en-US');
+const compact = n => n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'k' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(Math.round(n));
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const esc = s => String(s).replace(/[&<>]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[c]));
+const median = a => { const s = [...a].sort((x, y) => x - y); return s.length ? (s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2) : 0; };
+function showTip(e, html){ TIP.innerHTML = html; TIP.classList.add('on'); moveTip(e); }
+function moveTip(e){ const w = TIP.offsetWidth, h = TIP.offsetHeight; let x = e.clientX + 14, y = e.clientY + 14; if (x + w > innerWidth - 8) x = e.clientX - w - 14; if (y + h > innerHeight - 8) y = e.clientY - h - 14; TIP.style.left = x + 'px'; TIP.style.top = y + 'px'; }
+function hideTip(){ TIP.classList.remove('on'); }
+function svgEl(tag, attrs, parent){ const el = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) el.setAttribute(k, attrs[k]); if (parent) parent.appendChild(el); return el; }
+function bindTip(el, html){ el.addEventListener('mouseenter', e => showTip(e, html())); el.addEventListener('mousemove', moveTip); el.addEventListener('mouseleave', hideTip); }
+const fdate = s => new Date(s.slice(0, 10) + 'T12:00:00Z').toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'});
+function spearman(a, b){
+  const rank = x => { const idx = x.map((v, i) => i).sort((i, j) => x[i] - x[j]); const r = new Array(x.length); let i = 0; while (i < idx.length) { let j = i; while (j + 1 < idx.length && x[idx[j + 1]] === x[idx[i]]) j++; for (let k = i; k <= j; k++) r[idx[k]] = (i + j) / 2; i = j + 1; } return r; };
+  const ra = rank(a), rb = rank(b); const ma = ra.reduce((s, v) => s + v, 0) / ra.length, mb = rb.reduce((s, v) => s + v, 0) / rb.length;
+  let num = 0, da = 0, db = 0; for (let i = 0; i < ra.length; i++) { num += (ra[i] - ma) * (rb[i] - mb); da += (ra[i] - ma) ** 2; db += (rb[i] - mb) ** 2; }
+  return da && db ? num / Math.sqrt(da * db) : 0;
+}
+
+// ------------------------------------------------------------------ state + filters
+const state = {outcome: 'imp', colorby: 'topic', topic: new Set(), wd: new Set(), media: new Set(), band: new Set()};
+function chips(hostId, key, items){
+  const host = document.getElementById(hostId);
+  items.forEach(([val, label, color]) => {
+    const b = document.createElement('button'); b.className = 'chip'; b.setAttribute('aria-pressed', 'false'); b.dataset.val = val;
+    b.innerHTML = (color ? `<i style="background:${color}"></i>` : '') + label;
+    b.addEventListener('click', () => { state[key].has(val) ? state[key].delete(val) : state[key].add(val); b.setAttribute('aria-pressed', state[key].has(val)); render(); });
+    host.appendChild(b);
+  });
+}
+chips('f-topic', 'topic', TOPICS.map(([n]) => [n, n]));
+chips('f-wd', 'wd', DAYS.map((d, i) => [i, d]));
+chips('f-media', 'media', MEDIA.map(([k, n]) => [k, n]));
+chips('f-band', 'band', BANDS.map((b, i) => [i, b[0]]));
+document.getElementById('outcome').addEventListener('change', e => { state.outcome = e.target.value; render(); });
+document.getElementById('colorby').addEventListener('change', e => { state.colorby = e.target.value; render(); });
+function filtered(){
+  return POSTS.filter(p => (!state.topic.size || p.topics.some(t => state.topic.has(t))) && (!state.wd.size || state.wd.has(p.wd)) && (!state.media.size || state.media.has(p.media)) && (!state.band.size || state.band.has(p.band)));
+}
+const SLOTS = ['--s1', '--s2', '--s3', '--s4'];
+function colorGroups(){
+  if (state.colorby === 'topic') { const top = TOPICS.slice(0, 4).map(([n]) => n); return {groups: [...top, 'Other / none'], of: p => { const t = p.topics.find(t => top.includes(t)); return t || 'Other / none'; }}; }
+  if (state.colorby === 'wd') return {groups: ['Fri', 'Mon', 'Tue', 'Wed', 'Other'], of: p => ['Mon', 'Tue', 'Wed'].includes(DAYS[p.wd]) ? DAYS[p.wd] : p.wd === 4 ? 'Fri' : 'Other'};
+  if (state.colorby === 'media') return {groups: ['Text or link', 'Image', 'Video', 'PDF', 'Other'], of: p => ({text: 'Text or link', image: 'Image', video: 'Video', document: 'PDF'})[p.media] || 'Other'};
+  return {groups: BANDS.map(b => b[0]), of: p => BANDS[p.band][0]};
+}
+const groupColor = (g, groups) => { const i = groups.indexOf(g); return i >= 0 && i < 4 && !/Other/.test(g) ? css(SLOTS[i]) : css('--other'); };
+
+// ------------------------------------------------------------------ header
+(function(){
+  const total = POSTS.reduce((s, p) => s + p.imp, 0);
+  document.getElementById('sub').innerHTML = `<b>${POSTS.length}</b> posts from <b>${fdate(POSTS[POSTS.length - 1].d)}</b> to <b>${fdate(POSTS[0].d)}</b>, <b>${compact(total)}</b> impressions, every post with its own reach and engagement figures. Pick an outcome, filter, and look for what holds up across the panels rather than in any one of them.`;
+  document.getElementById('foot').textContent = 'Per-post figures were read from each post\'s analytics page on LinkedIn. Topics are keyword matches on the post text and a post can carry several. Publish times are converted from UTC to ' + TZ + '. Correlations are Spearman rank coefficients; at this sample size anything under 0.2 in magnitude is noise.';
+})();
+
+// ------------------------------------------------------------------ scatter
+function renderScatter(P, O){
+  const host = document.getElementById('c-scatter'); host.innerHTML = '';
+  const {groups, of} = colorGroups();
+  document.getElementById('lg-scatter').innerHTML = groups.map(g => `<span><i style="background:${groupColor(g, groups)}"></i>${g}</span>`).join('');
+  const W = 1100, H = 380, L = 56, R = 16, T = 16, B = 44, pw = W - L - R, ph = H - T - B;
+  const svg = svgEl('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Length against ' + O.name}, host);
+  const xs0 = P.map(p => p.len).filter(v => v > 0), ys0 = P.map(O.f);
+  const xmin = 100, xmax = Math.max(3000, ...xs0);
+  const xlog = v => L + pw * (Math.log10(Math.max(v, xmin)) - Math.log10(xmin)) / (Math.log10(xmax) - Math.log10(xmin));
+  let ymin, ymax, ys;
+  if (O.log) { ymin = Math.max(1, Math.min(...ys0.filter(v => v > 0))) ; ymax = Math.max(...ys0) * 1.15; ys = v => T + ph - ph * (Math.log10(Math.max(v, ymin)) - Math.log10(ymin)) / (Math.log10(ymax) - Math.log10(ymin)); }
+  else { ymin = 0; ymax = Math.max(...ys0) * 1.1 || 1; ys = v => T + ph - ph * (v - ymin) / (ymax - ymin); }
+  const yt = O.log ? [1, 10, 100, 1000, 10000, 100000].filter(v => v >= ymin && v <= ymax) : [0, .25, .5, .75, 1].map(f => ymin + (ymax - ymin) * f);
+  yt.forEach(v => { const yy = ys(v); svgEl('line', {x1: L, x2: W - R, y1: yy, y2: yy, class: 'gl'}, svg); svgEl('text', {x: L - 8, y: yy + 4, 'text-anchor': 'end', class: 'ax'}, svg).textContent = O.fmt(v); });
+  [100, 300, 1000, 2000, 3000].filter(v => v <= xmax).forEach(v => { const xx = xlog(v); svgEl('line', {x1: xx, x2: xx, y1: T, y2: T + ph, class: 'gl'}, svg); svgEl('text', {x: xx, y: H - 24, 'text-anchor': 'middle', class: 'ax'}, svg).textContent = fmt(v); });
+  svgEl('line', {x1: L, x2: W - R, y1: T + ph, y2: T + ph, class: 'bl'}, svg);
+  svgEl('text', {x: L + pw / 2, y: H - 6, 'text-anchor': 'middle', class: 'axt'}, svg).textContent = 'Characters in post';
+  const med = median(ys0); svgEl('line', {x1: L, x2: W - R, y1: ys(med), y2: ys(med), stroke: css('--ink-2'), 'stroke-width': 1, 'stroke-dasharray': '3 3'}, svg);
+  svgEl('text', {x: W - R, y: ys(med) - 5, 'text-anchor': 'end', class: 'lab'}, svg).textContent = 'median ' + O.fmt(med);
+  // draw "Other" first so colored points sit on top
+  const ordered = [...P].sort((a, b) => (/Other/.test(of(a)) ? 0 : 1) - (/Other/.test(of(b)) ? 0 : 1));
+  ordered.forEach(p => {
+    const g = of(p); const c = svgEl('circle', {cx: xlog(p.len), cy: ys(O.f(p)), r: 5, fill: groupColor(g, groups), class: 'pt', opacity: /Other/.test(g) ? .75 : .9}, svg);
+    bindTip(c, () => `<b>${fdate(p.d)} · ${DAYS[p.wd]} ${String(p.hr).padStart(2, '0')}:00</b><br>${esc(p.text.replace(/\s+/g, ' ').slice(0, 110))}…<br>${fmt(p.imp)} impressions · ${p.react} reactions · ${p.com} comments · ${p.rep} reposts · ${p.sav} saves<br>${fmt(p.len)} chars · ${p.media === 'text' ? 'text' : p.media}${p.topics.length ? ' · ' + p.topics.join(', ') : ''}`);
+    c.addEventListener('click', () => window.open(p.url, '_blank', 'noopener'));
+  });
+  const rho = spearman(P.map(p => p.len), ys0);
+  svgEl('text', {x: L + 6, y: T + 14, class: 'lab strong'}, svg).textContent = `Spearman ρ(length, ${O.name.toLowerCase()}) = ${rho.toFixed(2)} across ${P.length} posts`;
+}
+
+// ------------------------------------------------------------------ matrices
+function matrix(hostId, rows, cols, cellPosts, O, rowLabel){
+  const host = document.getElementById(hostId);
+  const cells = rows.map((r, i) => cols.map((c, j) => { const ps = cellPosts(i, j); return {n: ps.length, v: ps.length ? median(ps.map(O.f)) : null}; }));
+  const vals = cells.flat().filter(c => c.n >= 2).map(c => c.v); const lo = Math.min(...vals), hi = Math.max(...vals);
+  const ramp = ['--q1', '--q2', '--q3', '--q4', '--q5', '--q6', '--q7'];
+  const shade = v => { if (v == null || hi === lo) return css('--q0'); const t = O.log ? (Math.log(v + 1) - Math.log(lo + 1)) / (Math.log(hi + 1) - Math.log(lo + 1)) : (v - lo) / (hi - lo); return css(ramp[Math.max(0, Math.min(6, Math.round(t * 6)))]); };
+  const ink = v => { if (v == null || hi === lo) return 'var(--muted)'; const t = O.log ? (Math.log(v + 1) - Math.log(lo + 1)) / (Math.log(hi + 1) - Math.log(lo + 1)) : (v - lo) / (hi - lo); return t > 0.5 ? '#fff' : 'var(--ink)'; };
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark';
+  host.innerHTML = `<table class="matrix"><thead><tr><th>${rowLabel}</th>${cols.map(c => `<th class="num" style="text-align:center">${c}</th>`).join('')}</tr></thead><tbody>${rows.map((r, i) => `<tr><th class="rh">${r}</th>${cols.map((c, j) => { const cell = cells[i][j]; const t = cell.v; const fg = dark ? (t == null ? 'var(--muted)' : ((O.log ? (Math.log(t + 1) - Math.log(lo + 1)) / (Math.log(hi + 1) - Math.log(lo + 1)) : (t - lo) / (hi - lo)) > 0.5 ? 'var(--ink)' : 'var(--ink)')) : ink(t); return `<td class="cell" style="background:${shade(t)};color:${fg};opacity:${cell.n && cell.n < 4 ? .55 : 1}">${cell.n ? `${O.fmt(t)}<small>${cell.n} post${cell.n === 1 ? '' : 's'}</small>` : '<span style="color:var(--muted)">–</span>'}</td>`; }).join('')}</tr>`).join('')}</tbody></table>`;
+}
+function renderMatrices(P, O){
+  const topicNames = TOPICS.map(([n]) => n);
+  matrix('m-topic-len', topicNames, BANDS.map(b => b[0]), (i, j) => P.filter(p => p.topics.includes(topicNames[i]) && p.band === j), O, 'Topic');
+  matrix('m-wd-hour', DAYS, HOURS.map(h => h[0]), (i, j) => P.filter(p => p.wd === i && p.hband === j), O, 'Day');
+}
+
+// ------------------------------------------------------------------ correlations
+function renderCorr(P, O){
+  const host = document.getElementById('c-corr'); host.innerHTML = '';
+  const y = P.map(O.f); const names = Object.keys(POSTS[0].feats);
+  const rows = names.map(n => { const x = P.map(p => p.feats[n]); const binary = x.every(v => v === 0 || v === 1); const n1 = binary ? x.filter(v => v).length : P.length; return {n, rho: spearman(x, y), count: n1, binary}; }).filter(r => r.count >= 8 && r.count <= P.length - (r.binary ? 8 : 0)).sort((a, b) => b.rho - a.rho);
+  const W = 1100, rowH = 22, L = 220, R = 60, T = 8, H = T + rows.length * rowH + 24, pw = W - L - R;
+  const svg = svgEl('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Correlation of features with ' + O.name}, host);
+  const x0 = L + pw / 2, xs = v => x0 + pw / 2 * v;
+  [-1, -.5, 0, .5, 1].forEach(v => { svgEl('line', {x1: xs(v), x2: xs(v), y1: T, y2: H - 20, class: v ? 'gl' : 'bl'}, svg); svgEl('text', {x: xs(v), y: H - 6, 'text-anchor': 'middle', class: 'ax'}, svg).textContent = v > 0 ? '+' + v : v; });
+  rows.forEach((r, i) => {
+    const yy = T + i * rowH; const w = Math.abs(xs(r.rho) - x0);
+    const rect = svgEl('rect', {x: r.rho >= 0 ? x0 : x0 - w, y: yy + 4, width: Math.max(1, w), height: rowH - 8, rx: 3, fill: Math.abs(r.rho) < 0.2 ? css('--other') : r.rho >= 0 ? css('--pos') : css('--neg')}, svg);
+    bindTip(rect, () => `<b>${r.n}</b><br>ρ = ${r.rho.toFixed(2)} with ${O.name.toLowerCase()}<br>${r.binary ? r.count + ' of ' + P.length + ' posts have it' : 'numeric feature across ' + P.length + ' posts'}`);
+    svgEl('text', {x: L - 10, y: yy + rowH / 2 + 4, 'text-anchor': 'end', class: 'lab' + (Math.abs(r.rho) >= 0.3 ? ' strong' : '')}, svg).textContent = r.n + (r.binary ? ` (${r.count})` : '');
+    svgEl('text', {x: r.rho >= 0 ? xs(r.rho) + 6 : xs(r.rho) - 6, y: yy + rowH / 2 + 4, 'text-anchor': r.rho >= 0 ? 'start' : 'end', class: 'lab'}, svg).textContent = (r.rho >= 0 ? '+' : '') + r.rho.toFixed(2);
+  });
+}
+
+// ------------------------------------------------------------------ controlled comparisons
+function renderControl(P, O){
+  const host = document.getElementById('m-control');
+  const cmp = [
+    ['Friday', p => p.wd === 4, 'Other weekday', p => p.wd < 5 && p.wd !== 4],
+    ['Image attached', p => p.media === 'image', 'Text or link', p => p.media === 'text'],
+    ['15:00 to 19:00', p => p.hr >= 15 && p.hr < 19, 'Any other hour', p => p.hr < 15 || p.hr >= 19],
+    ...TOPICS.slice(0, 2).map(([n]) => [n + ' topic', p => p.topics.includes(n), 'Not ' + n, p => !p.topics.includes(n)]),
+  ];
+  const cell = ps => ps.length ? `${O.fmt(median(ps.map(O.f)))} <span style="color:var(--muted)">(${ps.length})</span>` : '<span style="color:var(--muted)">–</span>';
+  host.innerHTML = `<table><thead><tr><th>Comparison</th>${BANDS.map(b => `<th class="num">${b[0]}</th>`).join('')}<th class="num">All lengths</th></tr></thead><tbody>${cmp.map(([a, fa, b, fb]) => `<tr><td><b style="font-weight:600">${a}</b></td>${BANDS.map((_, i) => `<td class="num">${cell(P.filter(p => p.band === i && fa(p)))}</td>`).join('')}<td class="num">${cell(P.filter(fa))}</td></tr><tr><td style="color:var(--ink-2)">${b}</td>${BANDS.map((_, i) => `<td class="num">${cell(P.filter(p => p.band === i && fb(p)))}</td>`).join('')}<td class="num">${cell(P.filter(fb))}</td></tr>`).join('')}</tbody></table>`;
+}
+
+// ------------------------------------------------------------------ trends
+function renderTrend(P, O){
+  const host = document.getElementById('c-trend'); host.innerHTML = '';
+  const months = [...new Set(POSTS.map(p => p.month))].sort();
+  const top = TOPICS.slice(0, 6);
+  const all = months.map(m => { const ps = P.filter(p => p.month === m); return ps.length ? median(ps.map(O.f)) : null; });
+  const gmax = Math.max(...top.flatMap(([n]) => months.map(m => { const ps = P.filter(p => p.month === m && p.topics.includes(n)); return ps.length ? median(ps.map(O.f)) : 0; })), ...all.filter(v => v !== null), 1);
+  top.forEach(([name], ti) => {
+    const box = document.createElement('div'); const color = ti < 4 ? css(SLOTS[ti]) : css('--ink-2');
+    box.innerHTML = `<h3><i style="background:${color}"></i>${name}</h3>`; host.appendChild(box);
+    const W = 340, H = 150, L = 40, R = 10, T = 12, B = 24, pw = W - L - R, ph = H - T - B;
+    const svg = svgEl('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': name + ' over time'}, box);
+    const ys = v => T + ph - ph * v / gmax, xs = i => L + pw * i / (months.length - 1);
+    [0, .5, 1].forEach(f => { svgEl('line', {x1: L, x2: W - R, y1: ys(gmax * f), y2: ys(gmax * f), class: f ? 'gl' : 'bl'}, svg); svgEl('text', {x: L - 6, y: ys(gmax * f) + 4, 'text-anchor': 'end', class: 'ax'}, svg).textContent = O.fmt(gmax * f); });
+    months.forEach((m, i) => { if (i % 3 === 0) svgEl('text', {x: xs(i), y: H - 6, 'text-anchor': 'middle', class: 'ax'}, svg).textContent = new Date(m + '-15').toLocaleString('en-US', {month: 'short', year: '2-digit'}); });
+    let d = ''; all.forEach((v, i) => { if (v === null) return; d += (d ? 'L' : 'M') + xs(i) + ',' + ys(v); });
+    svgEl('path', {d, fill: 'none', stroke: css('--axis'), 'stroke-width': 1.5, 'stroke-dasharray': '3 3'}, svg);
+    let pen = false, dd = '';
+    months.forEach((m, i) => { const ps = P.filter(p => p.month === m && p.topics.includes(name)); if (!ps.length) { pen = false; return; } const v = median(ps.map(O.f)); dd += (pen ? 'L' : 'M') + xs(i) + ',' + ys(v); pen = true; });
+    svgEl('path', {d: dd, fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-linejoin': 'round'}, svg);
+    months.forEach((m, i) => { const ps = P.filter(p => p.month === m && p.topics.includes(name)); if (!ps.length) return; const v = median(ps.map(O.f));
+      const c = svgEl('circle', {cx: xs(i), cy: ys(v), r: 4, fill: ps.length > 1 ? color : css('--surface'), stroke: color, 'stroke-width': 2}, svg);
+      bindTip(c, () => `<b>${name} · ${new Date(m + '-15').toLocaleString('en-US', {month: 'long', year: 'numeric'})}</b><br>median ${O.fmt(v)} across ${ps.length} post${ps.length === 1 ? '' : 's'}<br><span style="opacity:.75">all posts that month: ${all[i] === null ? '–' : O.fmt(all[i])}</span>`); });
+  });
+  const note = host.closest('.panel').querySelector('.note'); if (!note.dataset.done) { note.dataset.done = 1; note.textContent += ' The dashed grey line is the median across all posts that month.'; }
+}
+
+function render(){
+  const P = filtered(); const O = OUT[state.outcome];
+  document.getElementById('status').innerHTML = `<b>${P.length}</b> of ${POSTS.length} posts selected · median ${O.name.toLowerCase()} <b>${O.fmt(median(P.map(O.f)))}</b>` + (P.length < 20 ? ' · small selection, read with care' : '');
+  if (!P.length) return;
+  renderScatter(P, O); renderMatrices(P, O); renderCorr(P, O); renderControl(P, O); renderTrend(P, O);
+}
+render();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+new MutationObserver(render).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
+</script>

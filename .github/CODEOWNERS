@@ -1,0 +1,10 @@
+# Every change needs the owner's review.
+* @secops-unpacked
+
+# Agent instructions and the code that runs in an authenticated browser session.
+# These change what other people's agents and browsers do. Never merge them unreviewed.
+/skill/                                          @secops-unpacked
+/skill/linkedin-post-analytics/SKILL.md          @secops-unpacked
+/skill/linkedin-post-analytics/scripts/          @secops-unpacked
+/.github/                                        @secops-unpacked
+/SECURITY.md                                     @secops-unpacked

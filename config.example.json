@@ -1,0 +1,47 @@
+{
+  "profile": "your-linkedin-handle",
+  "timezone": "UTC",
+  "timezone_label": "UTC",
+  "series": {
+    "name": "Weekly Roundup",
+    "slug": "weekly-roundup",
+    "include": "weekly roundup|roundup, week",
+    "exclude": "no roundup this week",
+    "_comment": "Set include and exclude to \"$^\" (matches nothing) if you do not run a recurring series."
+  },
+  "topics": [
+    {
+      "name": "SIEM",
+      "pattern": "\\bsiem\\b"
+    },
+    {
+      "name": "AI SOC & agents",
+      "pattern": "\\bai[ -]?soc\\b|agentic|\\bai agents?\\b|\\bagents?\\b|\\bllms?\\b|copilot"
+    },
+    {
+      "name": "Detection engineering",
+      "pattern": "detection engineering|detection[- ]as[- ]code|\\bdetections?\\b"
+    },
+    {
+      "name": "Vendors & market",
+      "pattern": "\\bvendors?\\b|acqui|\\bmarket\\b|gartner|quadrant|landscape"
+    },
+    {
+      "name": "SOAR & automation",
+      "pattern": "\\bsoar\\b|security orchestration|automation|playbook"
+    },
+    {
+      "name": "Threat intel & hunting",
+      "pattern": "threat intel|\\bcti\\b|threat hunt"
+    },
+    {
+      "name": "Metrics & maturity",
+      "pattern": "\\bmttr\\b|maturity|metrics|soc-cmm"
+    }
+  ],
+  "dashboards": {
+    "posting_record_url": "",
+    "post_explorer_url": "",
+    "posting_report_url": ""
+  }
+}

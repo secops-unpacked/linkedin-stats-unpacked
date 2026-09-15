@@ -1,0 +1,28 @@
+# Workspace data never belongs in the repo. This is a public repo and git history is
+# permanent: deleting a file in a later commit does not remove it from a clone.
+config.json
+posts.json
+analytics.json
+post_metrics.json
+post_metrics.csv
+series.json
+series.csv
+*-siem.json
+*-siem.csv
+*-roundup.json
+*-roundup.csv
+posting-record.sqlite
+posting-record.schema.md
+posting-record-dump-*.txt
+snapshots/
+runs/
+dist/
+*.xlsx
+*.zip
+
+# Real account data in image form. Anything committed under docs/ must be synthetic
+# or belong to someone who has agreed to it being public and permanent.
+docs/screenshots/
+
+__pycache__/
+.DS_Store

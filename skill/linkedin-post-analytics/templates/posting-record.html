@@ -1,0 +1,819 @@
+<title>Posting Record</title>
+<style>
+:root{
+  color-scheme:light;
+  --plane:#f5f6f8; --surface:#ffffff; --ink:#12151a; --ink-2:#565c66; --muted:#858b95;
+  --grid:#e5e8ed; --axis:#c5cad2; --ring:rgba(18,21,26,.10); --hover:rgba(42,120,214,.08);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --o1:#86b6ef; --o2:#5598e7; --o3:#2a78d6; --o4:#184f95;
+  --q0:#eef3fa; --q1:#cde2fb; --q2:#9ec5f4; --q3:#6da7ec; --q4:#3987e5; --q5:#256abf; --q6:#184f95; --q7:#0d366b;
+  --tip-bg:#12151a; --tip-ink:#ffffff;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --plane:#0e1013; --surface:#181b20; --ink:#f2f3f5; --ink-2:#b9bdc5; --muted:#868b94;
+    --grid:#282c33; --axis:#3a3f48; --ring:rgba(255,255,255,.10); --hover:rgba(57,135,229,.14);
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    --o1:#86b6ef; --o2:#5598e7; --o3:#3987e5; --o4:#1c5cab;
+    --q0:#1d2129; --q1:#0d366b; --q2:#104281; --q3:#184f95; --q4:#256abf; --q5:#3987e5; --q6:#6da7ec; --q7:#9ec5f4;
+    --tip-bg:#f2f3f5; --tip-ink:#12151a;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --plane:#0e1013; --surface:#181b20; --ink:#f2f3f5; --ink-2:#b9bdc5; --muted:#868b94;
+  --grid:#282c33; --axis:#3a3f48; --ring:rgba(255,255,255,.10); --hover:rgba(57,135,229,.14);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --o1:#86b6ef; --o2:#5598e7; --o3:#3987e5; --o4:#1c5cab;
+  --q0:#1d2129; --q1:#0d366b; --q2:#104281; --q3:#184f95; --q4:#256abf; --q5:#3987e5; --q6:#6da7ec; --q7:#9ec5f4;
+  --tip-bg:#f2f3f5; --tip-ink:#12151a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--plane);color:var(--ink);font:15px/1.5 "Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;padding-block:32px 64px;padding-inline:clamp(16px,4vw,40px)}
+.wrap{max-width:1140px;margin:0 auto}
+h1{font-size:clamp(28px,4vw,40px);line-height:1.05;letter-spacing:-.02em;margin:0 0 8px;text-wrap:balance}
+.sub{color:var(--ink-2);margin:0;max-width:64ch}
+.sub b{color:var(--ink);font-weight:600}
+.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+h2{font-size:16px;font-weight:600;margin:0;letter-spacing:-.01em}
+.note{color:var(--muted);font-size:13px;margin:2px 0 0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:28px 0 20px}
+.tile{background:var(--surface);border:1px solid var(--ring);border-radius:8px;padding:14px 16px 12px}
+.tile .k{font-size:12px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.06em;font-weight:500}
+.tile .v{font-size:30px;font-weight:600;letter-spacing:-.02em;line-height:1.1;margin-top:4px}
+.tile .d{font-size:12px;color:var(--muted);margin-top:4px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 16px}
+.filters .lbl{font-size:13px;color:var(--ink-2);margin-right:4px}
+.chip{border:1px solid var(--ring);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 12px;font:inherit;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.chip:focus-visible,input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--ring);border-radius:8px;padding:16px 18px 12px;min-width:0}
+.panel.wide{grid-column:1/-1}
+.panel header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.ax{font:11px "JetBrains Mono",ui-monospace,monospace;fill:var(--muted)}
+.gl{stroke:var(--grid);stroke-width:1}
+.bl{stroke:var(--axis);stroke-width:1}
+.lab{font:11px "Public Sans",system-ui,sans-serif;fill:var(--ink-2)}
+.lab.strong{fill:var(--ink);font-weight:600}
+rect.bar{cursor:pointer}
+rect.hit{fill:transparent;cursor:pointer}
+rect.hit:hover + rect.bar, rect.bar:hover{filter:brightness(.88)}
+.tip{position:fixed;pointer-events:none;background:var(--tip-bg);color:var(--tip-ink);font-size:12px;line-height:1.4;padding:8px 10px;border-radius:6px;max-width:260px;z-index:20;opacity:0;transition:opacity .08s}
+.tip b{font-weight:600}
+.tip.on{opacity:1}
+.small{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:820px){.small{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-weight:500;color:var(--ink-2);padding:8px 8px;border-bottom:1px solid var(--axis);white-space:nowrap}
+td{padding:9px 8px;border-bottom:1px solid var(--grid);vertical-align:top}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--hover)}
+tr.full td{background:var(--plane)}
+.txt{white-space:pre-wrap;max-width:72ch;color:var(--ink)}
+.snip{color:var(--ink);max-width:72ch}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+input[type=search],select{font:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--ring);border-radius:6px;background:var(--plane);color:var(--ink)}
+input[type=search]{min-width:220px}
+a{color:var(--s1)}
+.tbl-wrap{overflow-x:auto}
+.count{font-size:12px;color:var(--muted)}
+.pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:10px}
+.pager button{font:inherit;font-size:13px;border:1px solid var(--ring);background:var(--surface);color:var(--ink);border-radius:6px;padding:5px 10px;cursor:pointer}
+.pager button:disabled{opacity:.4;cursor:default}
+.tags{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:600px){.tags{grid-template-columns:1fr}}
+.tags h3{font-size:13px;font-weight:500;color:var(--ink-2);margin:0 0 6px}
+.tags ol{margin:0;padding:0;list-style:none}
+.tags li{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid var(--grid);font-size:13px}
+.tags li span:last-child{font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.perf-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:36px 0 4px}
+.perf-head h2{font-size:22px;letter-spacing:-.015em}
+.perf-head .range{color:var(--muted);font-size:13px}
+.perf-sub{color:var(--ink-2);margin:0 0 0;max-width:72ch}
+.mark{stroke:var(--ink-2);stroke-width:1.5}
+.demo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:820px){.demo{grid-template-columns:1fr}}
+.demo h3{font-size:13px;font-weight:500;color:var(--ink-2);margin:0 0 6px}
+.demo ol{margin:0;padding:0;list-style:none}
+.demo li{display:grid;grid-template-columns:1fr auto;gap:8px;padding:3px 0;border-bottom:1px solid var(--grid);font-size:13px;align-items:center}
+.demo li span:last-child{font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.demo .bar{height:4px;border-radius:2px;background:var(--s1);grid-column:1/-1;margin:-1px 0 2px}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable[aria-sort]{color:var(--ink);font-weight:600}
+.pill{display:inline-block;font:11px "JetBrains Mono",monospace;padding:1px 6px;border-radius:4px;background:var(--hover);color:var(--ink)}
+.foot{color:var(--muted);font-size:12px;margin-top:28px;max-width:80ch}
+@media (prefers-reduced-motion:reduce){.tip{transition:none}}
+</style>
+
+<div class="wrap">
+  <h1>Posting Record</h1>
+  <p class="sub" id="sub"></p>
+
+  <div class="tiles" id="tiles"></div>
+
+
+  <div class="perf-head"><h2>Performance</h2><span class="range" id="perf-range"></span></div>
+  <p class="perf-sub">Daily totals, followers and audience come from LinkedIn's analytics export. Per-post numbers come from each post's own analytics page, collected for every post in the window.</p>
+  <div class="tiles" id="perf-tiles"></div>
+  <div class="grid" style="margin-bottom:36px">
+    <section class="panel wide">
+      <header><div><h2>Impressions per day</h2><p class="note">Ticks under the baseline mark days you published. Hover a day to see what went out.</p></div></header>
+      <div id="c-daily"></div>
+    </section>
+    <section class="panel">
+      <header><div><h2>Reach by length</h2><p class="note">Median impressions per post in each length band. Every post counts, not just the winners.</p></div></header>
+      <div id="c-med-len"></div>
+    </section>
+    <section class="panel">
+      <header><div><h2>Reach by weekday</h2><p class="note">Median impressions by the day you published, __TZ_LABEL__ time.</p></div></header>
+      <div id="c-med-wd"></div>
+    </section>
+    <section class="panel">
+      <header><div><h2>What separates the top quarter</h2><p class="note">Engagement per 1,000 impressions, median, for the top 25% of posts by reach against the other 75%. A ratio near 1 means that action does not travel with reach.</p></div></header>
+      <div class="tbl-wrap"><table><thead><tr><th>Per 1,000 impressions</th><th class="num">Top 25%</th><th class="num">Rest</th><th class="num">Ratio</th></tr></thead><tbody id="mix-rows"></tbody></table></div>
+    </section>
+    <section class="panel">
+      <header><div><h2>Media type</h2><p class="note">Detected from each post's page. Native uploads only; a link preview counts as text.</p></div></header>
+      <div class="tbl-wrap"><table><thead><tr><th>Type</th><th class="num">Posts</th><th class="num">Median reach</th><th class="num">Eng. rate</th><th class="num">Saves /1k</th></tr></thead><tbody id="media-rows"></tbody></table></div>
+    </section>
+    <section class="panel">
+      <header><div><h2>Followers</h2><p class="note">Cumulative new followers over the window.</p></div></header>
+      <div id="c-fol"></div>
+    </section>
+    <section class="panel">
+      <header><div><h2>Who follows you</h2><p class="note">Audience demographics as LinkedIn reports them. Percentages are rounded by LinkedIn.</p></div></header>
+      <div class="demo" id="c-demo"></div>
+    </section>
+    <section class="panel wide">
+      <header><div><h2>Every post, with its numbers</h2><p class="note">Every post in the window. Click a column to sort. Rate is social engagements divided by impressions.</p></div></header>
+      <div class="tbl-wrap"><table id="top-tbl">
+        <thead><tr><th>Date</th><th class="num sortable" data-k="imp" aria-sort="descending">Impr.</th><th class="num sortable" data-k="reactions">React.</th><th class="num sortable" data-k="comments">Comm.</th><th class="num sortable" data-k="reposts">Repost</th><th class="num sortable" data-k="saves">Saves</th><th class="num sortable" data-k="sends">Sends</th><th class="num sortable" data-k="fol">Fol.</th><th class="num sortable" data-k="rate">Rate</th><th class="num sortable" data-k="len">Chars</th><th>Media</th><th>Post</th><th></th></tr></thead>
+        <tbody id="top-rows"></tbody>
+      </table></div>
+    </section>
+  </div>
+
+
+
+
+  <div class="perf-head"><h2>Reach over time</h2><span class="range" id="rc-range"></span></div>
+  <p class="perf-sub" id="rc-sub"></p>
+  <div class="grid" style="margin-bottom:36px">
+    <section class="panel wide">
+      <header><div><h2>Impressions by days since publishing</h2><p class="note">One line per post, one point per weekly collection. The four newest posts are colored and labeled; other posts are grey where they fall inside the window. Log scale.</p></div>
+        <div class="legend" id="lg-rc"></div></header>
+      <div id="c-rc"></div>
+    </section>
+    <section class="panel">
+      <header><div><h2>Grew most since the previous collection</h2><p class="note" id="rc-growth-note">Change in impressions between the two most recent snapshots.</p></div></header>
+      <div class="tbl-wrap"><table><thead><tr><th>Post</th><th class="num">Age</th><th class="num">Now</th><th class="num">Gain</th><th class="num">Saves +</th></tr></thead><tbody id="rc-growth"></tbody></table></div>
+    </section>
+    <section class="panel">
+      <header><div><h2>How fast reach arrives</h2><p class="note">Median share of a post's day-28 impressions reached by each day. Needs posts collected both early and late; fills in as snapshots accumulate.</p></div></header>
+      <div id="c-rc-shape"></div>
+    </section>
+  </div>
+
+  <div class="perf-head"><h2>Quarterly trends</h2><span class="range" id="qt-range"></span></div>
+  <p class="perf-sub">Per-post figures divide the quarter's daily totals by the posts you published in it, so the back catalog's reach is attributed to the current quarter. Partial quarters at both ends are marked.</p>
+  <div class="grid" style="margin-bottom:36px">
+    <section class="panel wide">
+      <div class="small" id="c-quarters" style="grid-template-columns:repeat(3,minmax(0,1fr))"></div>
+    </section>
+    <section class="panel wide">
+      <header><div><h2>What earns reach, what earns engagement</h2><p class="note">Topics and formats across the posts in the window, using every post's own numbers.</p></div></header>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Slice</th><th class="num">Posts</th><th class="num">Median reach</th><th class="num">Over 10k</th><th class="num">Saves /1k</th><th class="num">Eng. rate</th></tr></thead>
+        <tbody id="qt-rows"></tbody>
+      </table></div>
+    </section>
+  </div>
+
+  <div class="perf-head"><h2>__SERIES_NAME__ series</h2><span class="range" id="fs-range"></span></div>
+  <p class="perf-sub" id="fs-sub"></p>
+  <div class="tiles" id="fs-tiles"></div>
+  <div class="grid" style="margin-bottom:36px">
+    <section class="panel wide">
+      <header><div><h2>Impressions per edition</h2><p class="note">Impressions per edition from each post's analytics page.</p></div>
+        <div class="legend" id="lg-fs"></div></header>
+      <div id="c-fs"></div>
+    </section>
+    <section class="panel wide">
+      <header><div><h2>All editions</h2><p class="note">Titles are pulled from the first non-boilerplate sentence, so treat them as working titles. Click a row for the full text.</p></div></header>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th class="num">#</th><th>Date</th><th>Title</th><th class="num">Chars</th><th class="num">Impressions</th><th class="num">Engagements</th><th></th></tr></thead>
+        <tbody id="fs-rows"></tbody>
+      </table></div>
+    </section>
+  </div>
+
+  <div class="filters" role="group" aria-label="Period">
+    <span class="lbl">Period</span>
+    <button class="chip" data-era="all" aria-pressed="false">All since 2013</button>
+    <button class="chip" data-era="2023" aria-pressed="true">2023 onward</button>
+    <button class="chip" data-era="12m" aria-pressed="false">Last 12 months</button>
+  </div>
+
+  <div class="grid">
+    <section class="panel wide">
+      <header><div><h2>Posts per month</h2><p class="note">Authored posts only. Empty reshares are excluded everywhere on this page.</p></div></header>
+      <div id="c-month"></div>
+    </section>
+
+    <section class="panel">
+      <header><div><h2>Length of posts by year</h2><p class="note">Share of posts in each length band. Characters, not words.</p></div>
+        <div class="legend" id="lg-len"></div></header>
+      <div id="c-len"></div>
+    </section>
+
+    <section class="panel">
+      <header><div><h2>When you publish</h2><p class="note">__TZ_LABEL__ local time. Darker means more posts.</p></div></header>
+      <div id="c-heat"></div>
+    </section>
+
+    <section class="panel wide">
+      <header><div><h2>Topic drift</h2><p class="note">Share of posts per quarter that mention each topic. Quarters with fewer than 5 posts are left blank.</p></div>
+        <div class="legend" id="lg-topic"></div></header>
+      <div id="c-topic"></div>
+    </section>
+
+    <section class="panel wide">
+      <header><div><h2>Hashtags, then and now</h2><p class="note">Top tags by era. Hashtags mostly disappear from your writing after 2023.</p></div></header>
+      <div class="tags" id="c-tags"></div>
+    </section>
+
+    <section class="panel wide">
+      <header><div><h2>What you give back</h2><p class="note">Activity you did on other people's posts, per year. Different scales, so three charts.</p></div></header>
+      <div class="small" id="c-given"></div>
+    </section>
+
+    <section class="panel wide">
+      <header>
+        <div><h2>All posts</h2><p class="note">Click a row for the full text. Search matches anywhere in the post.</p></div>
+        <div class="tools">
+          <input type="search" id="q" placeholder="Search posts" aria-label="Search posts">
+          <select id="yr" aria-label="Year"></select>
+          <select id="sort" aria-label="Sort">
+            <option value="new">Newest first</option>
+            <option value="old">Oldest first</option>
+            <option value="long">Longest first</option>
+            <option value="short">Shortest first</option>
+          </select>
+        </div>
+      </header>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Date</th><th class="num">Chars</th><th class="num">Impr.</th><th>Post</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+      <div class="pager"><span class="count" id="cnt"></span><button id="prev">Previous</button><button id="next">Next</button></div>
+    </section>
+  </div>
+
+  <p class="foot" id="foot"></p>
+</div>
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script id="analytics" type="application/json">__ANALYTICS__</script>
+<script id="history" type="application/json">__HISTORY__</script>
+<script id="pm" type="application/json">__PM__</script>
+<script id="series" type="application/json">__SERIES__</script>
+<script id="data" type="application/json">__POSTS__</script>
+<script>
+const DATA = JSON.parse(document.getElementById('data').textContent);
+const POSTS = DATA.posts.map(p => {
+  const utc = new Date(p.d.replace(' ', 'T') + 'Z');
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {timeZone: __TZ_JS__, hour12:false, weekday:'short', hour:'2-digit'}).formatToParts(utc).map(x => [x.type, x.value]));
+  return {...p, utc, ym: p.d.slice(0,7), y: +p.d.slice(0,4), q: p.d.slice(0,4) + ' Q' + (Math.floor((+p.d.slice(5,7) - 1) / 3) + 1),
+    wd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(parts.weekday), hr: +parts.hour % 24};
+});
+const LATEST = POSTS[0].utc;
+const TIP = document.getElementById('tip');
+const fmt = n => n.toLocaleString('en-US');
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+function showTip(e, html){ TIP.innerHTML = html; TIP.classList.add('on'); moveTip(e); }
+function moveTip(e){ const w = TIP.offsetWidth, h = TIP.offsetHeight; let x = e.clientX + 14, y = e.clientY + 14; if (x + w > innerWidth - 8) x = e.clientX - w - 14; if (y + h > innerHeight - 8) y = e.clientY - h - 14; TIP.style.left = x + 'px'; TIP.style.top = y + 'px'; }
+function hideTip(){ TIP.classList.remove('on'); }
+function svgEl(tag, attrs, parent){ const el = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) el.setAttribute(k, attrs[k]); if (parent) parent.appendChild(el); return el; }
+function bindTip(el, html){ el.addEventListener('mouseenter', e => showTip(e, html())); el.addEventListener('mousemove', moveTip); el.addEventListener('mouseleave', hideTip); }
+
+// ---------------------------------------------------------------- period
+let era = '2023';
+function inEra(p){
+  if (era === 'all') return true;
+  if (era === '2023') return p.y >= 2023;
+  const cutoff = new Date(LATEST); cutoff.setMonth(cutoff.getMonth() - 12);
+  return p.utc >= cutoff;
+}
+document.querySelectorAll('.chip[data-era]').forEach(b => b.addEventListener('click', () => {
+  era = b.dataset.era; document.querySelectorAll('.chip[data-era]').forEach(x => x.setAttribute('aria-pressed', x === b)); renderEra();
+}));
+
+// ---------------------------------------------------------------- header + tiles
+(function(){
+  const m = DATA.meta;
+  document.getElementById('sub').innerHTML = `<b>${fmt(m.authored)}</b> posts with your own words, out of <b>${fmt(m.total_shares)}</b> shares in the export dated <b>${m.export_dir.match(/\d{2}-\d{2}-\d{4}/)?.[0].replace(/(\d{2})-(\d{2})-(\d{4})/, '$3-$1-$2') || m.generated.slice(0,10)}</b>. Cadence and text come from the data export. Reach comes from the analytics export, which covers the last 12 months only.`;
+  const last12 = POSTS.filter(p => { const c = new Date(LATEST); c.setMonth(c.getMonth() - 12); return p.utc >= c; });
+  const prev12 = POSTS.filter(p => { const c = new Date(LATEST); c.setMonth(c.getMonth() - 24); const d = new Date(LATEST); d.setMonth(d.getMonth() - 12); return p.utc >= c && p.utc < d; });
+  const y26 = POSTS.filter(p => p.y === 2026), y24 = POSTS.filter(p => p.y === 2024);
+  const med = a => { const s = a.map(p => p.len).sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : 0; };
+  const byMonth = {}; POSTS.forEach(p => byMonth[p.ym] = (byMonth[p.ym] || 0) + 1);
+  const busiest = Object.entries(byMonth).sort((a, b) => b[1] - a[1])[0];
+  const longShare = a => a.length ? Math.round(100 * a.filter(p => p.len >= 1000).length / a.length) : 0;
+  const tiles = [
+    ['Authored posts', fmt(m.authored), 'since ' + POSTS[POSTS.length - 1].d.slice(0, 4)],
+    ['Last 12 months', fmt(last12.length), `${prev12.length ? (last12.length >= prev12.length ? '+' : '') + Math.round(100 * (last12.length - prev12.length) / prev12.length) + '% vs prior 12' : ''}`],
+    ['Median length, 2026', fmt(med(y26)) + ' ch', `2024: ${fmt(med(y24))} ch`],
+    ['Essays, 2026', longShare(y26) + '%', `posts over 1,000 ch · 2024: ${longShare(y24)}%`],
+    ['Busiest month', busiest[1] + ' posts', busiest[0]],
+  ];
+  document.getElementById('tiles').innerHTML = tiles.map(([k, v, d]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
+  document.getElementById('foot').textContent = `Generated ${m.generated.replace('T', ' ')} from ${m.export_dir} with prepare.py. Re-run the script on a newer export and republish to refresh. Posting times are converted from UTC to ${__TZ_JS__}.`;
+})();
+
+// ---------------------------------------------------------------- posts per month
+function renderMonth(){
+  const host = document.getElementById('c-month'); host.innerHTML = '';
+  const sel = POSTS.filter(inEra);
+  const first = sel[sel.length - 1].ym, last = sel[0].ym;
+  const months = []; let [y, mo] = first.split('-').map(Number);
+  while (true) { const k = `${y}-${String(mo).padStart(2, '0')}`; months.push(k); if (k === last) break; mo++; if (mo > 12) { mo = 1; y++; } }
+  const counts = {}; sel.forEach(p => counts[p.ym] = (counts[p.ym] || 0) + 1);
+  const max = Math.max(...months.map(k => counts[k] || 0), 1);
+  const W = 1100, H = 240, L = 36, R = 12, T = 14, B = 34, pw = W - L - R, ph = H - T - B;
+  const svg = svgEl('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Posts per month'}, host);
+  const step = Math.max(1, Math.ceil(max / 4)); const ticks = []; for (let v = 0; v <= max; v += step) ticks.push(v);
+  ticks.forEach(v => { const yy = T + ph - ph * v / max; svgEl('line', {x1: L, x2: W - R, y1: yy, y2: yy, class: v ? 'gl' : 'bl'}, svg); svgEl('text', {x: L - 8, y: yy + 4, 'text-anchor': 'end', class: 'ax'}, svg).textContent = v; });
+  const bw = pw / months.length, gap = Math.min(2, bw * .25);
+  months.forEach((k, i) => {
+    const c = counts[k] || 0, x = L + i * bw, h = ph * c / max, yy = T + ph - h;
+    const hit = svgEl('rect', {x, y: T, width: bw, height: ph, class: 'hit'}, svg);
+    if (c) svgEl('rect', {x: x + gap / 2, y: yy, width: Math.max(1, bw - gap), height: h, rx: Math.min(3, bw / 3), fill: css('--s1'), class: 'bar'}, svg);
+    const html = () => `<b>${new Date(k + '-15').toLocaleString('en-US', {month: 'long', year: 'numeric'})}</b><br>${c} post${c === 1 ? '' : 's'}`;
+    bindTip(hit, html);
+    const isJan = k.endsWith('-01') || i === 0;
+    const every = months.length > 60 ? 12 : months.length > 30 ? 6 : months.length > 14 ? 3 : 1;
+    if ((every === 12 && isJan) || (every !== 12 && i % every === 0)) svgEl('text', {x: x + bw / 2, y: H - 12, 'text-anchor': 'middle', class: 'ax'}, svg).textContent = every === 12 ? k.slice(0, 4) : every === 1 ? new Date(k + '-15').toLocaleString('en-US', {month: 'short'}) + (k.endsWith('-01') || i === 0 ? ' ' + k.slice(2, 4) : '') : k.slice(0, 4) + '-' + k.slice(5);
+  });
+  const peak = months.reduce((a, k) => (counts[k] || 0) > (counts[a] || 0) ? k : a, months[0]);
+  const pi = months.indexOf(peak); const px = L + pi * bw + bw / 2, py = T + ph - ph * counts[peak] / max - 6;
+  svgEl('text', {x: Math.min(Math.max(px, L + 30), W - R - 30), y: py, 'text-anchor': 'middle', class: 'lab strong'}, svg).textContent = `${counts[peak]} in ${new Date(peak + '-15').toLocaleString('en-US', {month: 'short', year: 'numeric'})}`;
+}
+
+// ---------------------------------------------------------------- length bands by year (100% stacked)
+const BANDS = [['Under 300', 0, 300, '--o1'], ['300 to 1,000', 300, 1000, '--o2'], ['1,000 to 2,000', 1000, 2000, '--o3'], ['Over 2,000', 2000, Infinity, '--o4']];
+function renderLen(){
+  const host = document.getElementById('c-len'); host.innerHTML = '';
+  document.getElementById('lg-len').innerHTML = BANDS.map(b => `<span><i style="background:var(${b[3]})"></i>${b[0]}</span>`).join('');
+  const years = [...new Set(POSTS.filter(inEra).map(p => p.y))].sort();
+  const yrs = era === '12m' ? years : years.filter(y => POSTS.filter(p => p.y === y).length >= 10);
+  const W = 520, H = 250, L = 40, R = 12, T = 10, B = 30, pw = W - L - R, ph = H - T - B;
+  const svg = svgEl('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Post length bands by year'}, host);
+  [0, 25, 50, 75, 100].forEach(v => { const yy = T + ph - ph * v / 100; svgEl('line', {x1: L, x2: W - R, y1: yy, y2: yy, class: v ? 'gl' : 'bl'}, svg); svgEl('text', {x: L - 8, y: yy + 4, 'text-anchor': 'end', class: 'ax'}, svg).textContent = v + '%'; });
+  const bw = pw / yrs.length, inner = Math.min(bw * .7, 56);
+  yrs.forEach((y, i) => {
+    const ps = POSTS.filter(p => p.y === y && (era !== '12m' || inEra(p))); const n = ps.length; let acc = 0;
+    const x = L + i * bw + (bw - inner) / 2;
+    BANDS.forEach((b, j) => {
+      const c = ps.filter(p => p.len >= b[1] && p.len < b[2]).length; const pct = 100 * c / n; if (!c) return;
+      const h = ph * pct / 100 - 2, yy = T + ph - ph * (acc + pct) / 100 + 1;
+      const r = svgEl('rect', {x, y: yy, width: inner, height: Math.max(0, h), fill: css(b[3]), class: 'bar', rx: j === BANDS.length - 1 || acc + pct >= 99.5 ? 3 : 0}, svg);
+      bindTip(r, () => `<b>${y} · ${b[0]} chars</b><br>${c} of ${n} posts (${Math.round(pct)}%)`);
+      if (pct >= 14) svgEl('text', {x: x + inner / 2, y: yy + h / 2 + 4, 'text-anchor': 'middle', class: 'lab', style: j >= 2 ? 'fill:#fff' : ''}, svg).textContent = Math.round(pct) + '%';
+      acc += pct;
+    });
+    svgEl('text', {x: x + inner / 2, y: H - 10, 'text-anchor': 'middle', class: 'ax'}, svg).textContent = y;
+  });
+}
+
+// ---------------------------------------------------------------- weekday x hour heatmap
+function renderHeat(){
+  const host = document.getElementById('c-heat'); host.innerHTML = '';
+  const sel = POSTS.filter(inEra); const grid = Array.from({length: 7}, () => Array(24).fill(0));
+  sel.forEach(p => { if (p.wd >= 0) grid[p.wd][p.hr]++; });
+  const max = Math.max(1, ...grid.flat());
+  const W = 520, H = 250, L = 40, R = 6, T = 22, B = 10, cw = (W - L - R) / 24, ch = (H - T - B) / 7;
+  const svg = svgEl('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Posts by weekday and hour'}, host);
+  const ramp = ['--q0', '--q1', '--q2', '--q3', '--q4', '--q5', '--q6', '--q7'];
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  for (let h = 0; h < 24; h += 3) svgEl('text', {x: L + h * cw + cw / 2, y: 14, 'text-anchor': 'middle', class: 'ax'}, svg).textContent = String(h).padStart(2, '0');
+  days.forEach((d, r) => {
+    svgEl('text', {x: L - 8, y: T + r * ch + ch / 2 + 4, 'text-anchor': 'end', class: 'ax'}, svg).textContent = d;
+    for (let h = 0; h < 24; h++) {
+      const v = grid[r][h]; const idx = v === 0 ? 0 : Math.min(7, 1 + Math.floor(6.99 * Math.sqrt(v / max)));
+      const c = svgEl('rect', {x: L + h * cw + 1, y: T + r * ch + 1, width: cw - 2, height: ch - 2, rx: 2, fill: css(ramp[idx])}, svg);
+      bindTip(c, () => `<b>${d} ${String(h).padStart(2, '0')}:00 to ${String(h + 1).padStart(2, '0')}:00</b><br>${v} post${v === 1 ? '' : 's'}`);
+    }
+  });
+}
+
+// ---------------------------------------------------------------- topic drift
+const TOPICS_ALL = __TOPICS_ALL__;
+const TOPICS = TOPICS_ALL.slice(0, 4).map((t, i) => [t[0], t[1], ['--s1', '--s2', '--s3', '--s4'][i]]);
+function renderTopic(){
+  const host = document.getElementById('c-topic'); host.innerHTML = '';
+  document.getElementById('lg-topic').innerHTML = TOPICS.map(t => `<span><i style="background:var(${t[2]})"></i>${t[0]}</span>`).join('');
+  const sel = POSTS.filter(inEra); const qs = [...new Set(sel.map(p => p.q))].sort();
+  const series = TOPICS.map(t => ({name: t[0], color: css(t[2]), pts: qs.map(q => { const ps = sel.filter(p => p.q === q); if (ps.length < 5) return null; return 100 * ps.filter(p => t[1].test(p.text)).length / ps.length; })}));
+  const max = Math.max(10, ...series.flatMap(s => s.pts.filter(v => v !== null)));
+  const top = Math.ceil(max / 10) * 10;
+  const W = 1100, H = 260, L = 40, R = 130, T = 12, B = 30, pw = W - L - R, ph = H - T - B;
+  const svg = svgEl('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Topic mentions per quarter'}, host);
+  for (let v = 0; v <= top; v += top / 5) { const yy = T + ph - ph * v / top; svgEl('line', {x1: L, x2: W - R, y1: yy, y2: yy, class: v ? 'gl' : 'bl'}, svg); svgEl('text', {x: L - 8, y: yy + 4, 'text-anchor': 'end', class: 'ax'}, svg).textContent = Math.round(v) + '%'; }
+  const xs = i => qs.length === 1 ? L + pw / 2 : L + pw * i / (qs.length - 1);
+  qs.forEach((q, i) => { if (qs.length <= 12 || q.endsWith('Q1')) svgEl('text', {x: xs(i), y: H - 10, 'text-anchor': 'middle', class: 'ax'}, svg).textContent = qs.length <= 12 ? q.replace(' ', ' ') : q.slice(0, 4); });
+  const ys = v => T + ph - ph * v / top;
+  const labels = [];
+  series.forEach(s => {
+    let d = '', pen = false;
+    s.pts.forEach((v, i) => { if (v === null) { pen = false; return; } d += (pen ? 'L' : 'M') + xs(i) + ',' + ys(v); pen = true; });
+    svgEl('path', {d, fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round'}, svg);
+    s.pts.forEach((v, i) => { if (v === null) return; const c = svgEl('circle', {cx: xs(i), cy: ys(v), r: 4, fill: s.color, stroke: css('--surface'), 'stroke-width': 2}, svg);
+      const n = sel.filter(p => p.q === qs[i]).length; const t = TOPICS.find(t => t[0] === s.name);
+      bindTip(c, () => `<b>${s.name} · ${qs[i]}</b><br>${Math.round(v)}% of ${n} posts (${sel.filter(p => p.q === qs[i] && t[1].test(p.text)).length})`); });
+    let li = s.pts.length - 1; while (li >= 0 && s.pts[li] === null) li--;
+    if (li >= 0) labels.push({name: s.name, color: s.color, x: xs(li) + 10, y: ys(s.pts[li])});
+  });
+  labels.sort((a, b) => a.y - b.y); for (let i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < 14) labels[i].y = labels[i - 1].y + 14;
+  labels.forEach(l => { const t = svgEl('text', {x: l.x, y: l.y + 4, class: 'lab strong'}, svg); t.textContent = l.name; });
+}
+
+// ---------------------------------------------------------------- hashtags by era
+(function(){
+  const eras = [['2013 to 2022', p => p.y <= 2022], ['2023 onward', p => p.y >= 2023]];
+  document.getElementById('c-tags').innerHTML = eras.map(([name, f]) => {
+    const ps = POSTS.filter(f); const c = {}; ps.forEach(p => p.tags.forEach(t => c[t] = (c[t] || 0) + 1));
+    const top = Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    const withTag = ps.filter(p => p.tags.length).length;
+    return `<div><h3>${name} · ${withTag} of ${ps.length} posts carry a hashtag (${Math.round(100 * withTag / ps.length)}%)</h3><ol>${top.map(([t, n]) => `<li><span>#${t}</span><span>${n}</span></li>`).join('')}</ol></div>`;
+  }).join('');
+})();
+
+// ---------------------------------------------------------------- given back: small multiples
+function renderGiven(){
+  const m = DATA.meta;
+  const sets = [['Reactions given', m.reactions_given_per_year], ['Comments left', m.comments_given_per_year], ['Reposts', m.reposts_per_year]];
+  const years = [...new Set(sets.flatMap(s => Object.keys(s[1])))].map(Number).sort().filter(y => y >= 2018);
+  document.getElementById('c-given').innerHTML = '';
+  sets.forEach(([name, obj]) => {
+    const box = document.createElement('div'); box.innerHTML = `<h3 style="font-size:13px;font-weight:500;color:var(--ink-2);margin:0 0 4px">${name}</h3>`; document.getElementById('c-given').appendChild(box);
+    const W = 340, H = 150, L = 44, R = 8, T = 16, B = 24, pw = W - L - R, ph = H - T - B;
+    const svg = svgEl('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': name + ' per year'}, box);
+    const max = Math.max(1, ...years.map(y => obj[y] || 0));
+    svgEl('line', {x1: L, x2: W - R, y1: T + ph, y2: T + ph, class: 'bl'}, svg);
+    svgEl('text', {x: L - 6, y: T + 4, 'text-anchor': 'end', class: 'ax'}, svg).textContent = fmt(max);
+    const bw = pw / years.length, inner = bw * .68;
+    years.forEach((y, i) => {
+      const v = obj[y] || 0, h = ph * v / max, x = L + i * bw + (bw - inner) / 2;
+      const r = svgEl('rect', {x, y: T + ph - h, width: inner, height: h, rx: 3, fill: css('--s1'), class: 'bar'}, svg);
+      bindTip(r, () => `<b>${y}</b><br>${fmt(v)} ${name.toLowerCase()}`);
+      svgEl('text', {x: x + inner / 2, y: H - 8, 'text-anchor': 'middle', class: 'ax'}, svg).textContent = String(y).slice(2);
+      if (v === max) svgEl('text', {x: x + inner / 2, y: T + ph - h - 5, 'text-anchor': 'middle', class: 'lab strong'}, svg).textContent = fmt(v);
+    });
+  });
+}
+
+// ---------------------------------------------------------------- table
+const PAGE = 25; let page = 0;
+const yrSel = document.getElementById('yr');
+yrSel.innerHTML = '<option value="">All years</option>' + [...new Set(POSTS.map(p => p.y))].sort((a, b) => b - a).map(y => `<option>${y}</option>`).join('');
+['q', 'yr', 'sort'].forEach(id => document.getElementById(id).addEventListener(id === 'q' ? 'input' : 'change', () => { page = 0; renderTable(); }));
+document.getElementById('prev').addEventListener('click', () => { page--; renderTable(); });
+document.getElementById('next').addEventListener('click', () => { page++; renderTable(); });
+function esc(s){ return s.replace(/[&<>]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[c])); }
+function renderTable(){
+  const q = document.getElementById('q').value.trim().toLowerCase(), y = yrSel.value, sort = document.getElementById('sort').value;
+  let rows = POSTS.filter(p => (!y || p.y === +y) && (!q || p.text.toLowerCase().includes(q)));
+  rows.sort((a, b) => sort === 'new' ? b.d.localeCompare(a.d) : sort === 'old' ? a.d.localeCompare(b.d) : sort === 'long' ? b.len - a.len : a.len - b.len);
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE)); page = Math.min(page, pages - 1);
+  const slice = rows.slice(page * PAGE, page * PAGE + PAGE);
+  document.getElementById('rows').innerHTML = slice.map((p, i) => {
+    const snip = p.text.replace(/\s+/g, ' ');
+    return `<tr class="row" data-i="${i}"><td class="mono" style="white-space:nowrap;color:var(--ink-2)">${p.d.slice(0, 10)}</td><td class="num">${fmt(p.len)}</td><td class="num">${TOP_BY_PID[idOf(p.url)] ? fmt(TOP_BY_PID[idOf(p.url)].imp) : '<span style="color:var(--muted)">–</span>'}</td><td><div class="snip">${esc(snip.length > 180 ? snip.slice(0, 180).trimEnd() + '…' : snip)}</div></td><td>${p.url ? `<a href="${p.url}" target="_blank" rel="noopener" aria-label="Open on LinkedIn">↗</a>` : ''}</td></tr>`;
+  }).join('');
+  document.getElementById('rows').querySelectorAll('tr.row').forEach(tr => tr.addEventListener('click', e => {
+    if (e.target.tagName === 'A') return;
+    const p = slice[+tr.dataset.i]; const nxt = tr.nextElementSibling;
+    if (nxt && nxt.classList.contains('full')) { nxt.remove(); return; }
+    const full = document.createElement('tr'); full.className = 'full'; full.innerHTML = `<td colspan="5"><div class="txt">${esc(p.text)}</div>${p.tags.length ? `<div class="count" style="margin-top:8px">${p.tags.map(t => '#' + t).join(' ')}</div>` : ''}</td>`; tr.after(full);
+  }));
+  document.getElementById('cnt').textContent = `${rows.length ? page * PAGE + 1 : 0} to ${Math.min(rows.length, (page + 1) * PAGE)} of ${fmt(rows.length)}`;
+  document.getElementById('prev').disabled = page === 0; document.getElementById('next').disabled = page >= pages - 1;
+}
+
+
+// ---------------------------------------------------------------- performance layer (analytics export)
+const AN = JSON.parse(document.getElementById('analytics').textContent);
+const idOf = u => (u || '').match(/\d{19}/)?.[0];
+const POST_BY_ID = {}; POSTS.forEach(p => { const i = idOf(p.url); if (i) POST_BY_ID[i] = p; });
+const PM = JSON.parse(document.getElementById('pm').textContent).posts;
+const TOP = PM.map(m => { const p = POST_BY_ID[m.id]; return p ? {...m, id: m.id, url: p.url, d: m.date, p, imp: m.impressions, eng: m.social_engagements, rate: m.impressions ? m.social_engagements / m.impressions : 0, len: p.len, fol: m.followers_gained || 0} : null; }).filter(Boolean);
+const median = a => { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : 0; };
+const TOP_BY_PID = Object.fromEntries(TOP.map(t => [t.id, t])); const Q_CUT = [...TOP].sort((a, b) => b.imp - a.imp)[Math.floor(TOP.length / 4) - 1]?.imp || 0; const TOP_IDS = new Set(TOP.filter(t => t.imp >= Q_CUT).map(t => t.id));
+const WIN = POSTS.filter(p => p.d.slice(0, 10) >= AN.window.start && p.d.slice(0, 10) <= AN.window.end);
+const POSTS_BY_DAY = {}; WIN.forEach(p => (POSTS_BY_DAY[p.d.slice(0, 10)] ||= []).push(p));
+const fdate = s => new Date(s + 'T12:00:00Z').toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'});
+const compact = n => n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e4 ? Math.round(n / 1e3) + 'k' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(n);
+
+(function(){
+  document.getElementById('perf-range').textContent = `${fdate(AN.window.start)} to ${fdate(AN.window.end)}`;
+  const topImp = TOP.reduce((s, t) => s + t.imp, 0);
+  const top10 = [...TOP].sort((a, b) => b.imp - a.imp).slice(0, 10).reduce((s, t) => s + t.imp, 0);
+  const onDays = AN.daily.filter(d => POSTS_BY_DAY[d.d]), offDays = AN.daily.filter(d => !POSTS_BY_DAY[d.d]);
+  const avg = a => a.length ? Math.round(a.reduce((s, d) => s + d.imp, 0) / a.length) : 0;
+  const tiles = [
+    ['Impressions', compact(AN.impressions), `${fmt(AN.members_reached)} members reached`],
+    ['Engagements', compact(AN.engagements), `${(100 * AN.engagements / AN.impressions).toFixed(2)}% of impressions`],
+    ['New followers', fmt(AN.new_followers), `${fmt(AN.total_followers)} total at window end`],
+    ['Posts published', fmt(WIN.length), `${Math.round(WIN.length / 52)} a week on average`],
+    ['Top 10 posts', Math.round(100 * top10 / AN.impressions) + '%', `of all impressions · median post: ${compact(median(TOP.map(t => t.imp)))}`],
+    ['Saves', fmt(TOP.reduce((s, t) => s + (t.saves || 0), 0)), `${fmt(TOP.reduce((s, t) => s + (t.reposts || 0), 0))} reposts · ${fmt(TOP.reduce((s, t) => s + (t.comments || 0), 0))} comments`],
+    ['Posting day lift', (avg(onDays) / avg(offDays)).toFixed(1) + 'x', `${fmt(avg(onDays))} vs ${fmt(avg(offDays))} impressions a day`],
+  ];
+  document.getElementById('perf-tiles').innerHTML = tiles.map(([k, v, d]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
+})();
+
+function renderDaily(){
+  const host = document.getElementById('c-daily'); host.innerHTML = '';
+  const D = AN.daily; const max = Math.max(...D.map(d => d.imp));
+  const W = 1100, H = 260, L = 44, R = 12, T = 14, B = 36, pw = W - L - R, ph = H - T - B;
+  const svg = svgEl('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Impressions per day'}, host);
+  const top = Math.ceil(max / 20000) * 20000;
+  for (let v = 0; v <= top; v += top / 4) { const yy = T + ph - ph * v / top; svgEl('line', {x1: L, x2: W - R, y1: yy, y2: yy, class: v ? 'gl' : 'bl'}, svg); svgEl('text', {x: L - 8, y: yy + 4, 'text-anchor': 'end', class: 'ax'}, svg).textContent = compact(v); }
+  const xs = i => L + pw * i / (D.length - 1), ys = v => T + ph - ph * v / top;
+  let area = `M${xs(0)},${ys(0)}`, line = '';
+  D.forEach((d, i) => { area += `L${xs(i)},${ys(d.imp)}`; line += (i ? 'L' : 'M') + xs(i) + ',' + ys(d.imp); });
+  area += `L${xs(D.length - 1)},${T + ph}Z`;
+  svgEl('path', {d: area, fill: css('--s1'), opacity: .12}, svg);
+  svgEl('path', {d: line, fill: 'none', stroke: css('--s1'), 'stroke-width': 1.5, 'stroke-linejoin': 'round'}, svg);
+  D.forEach((d, i) => { if (POSTS_BY_DAY[d.d]) svgEl('line', {x1: xs(i), x2: xs(i), y1: T + ph + 3, y2: T + ph + 9, class: 'mark'}, svg); });
+  D.forEach((d, i) => { if (d.d.endsWith('-01')) { svgEl('text', {x: xs(i), y: H - 8, 'text-anchor': 'middle', class: 'ax'}, svg).textContent = new Date(d.d + 'T12:00:00Z').toLocaleString('en-US', {month: 'short'}) + (d.d.endsWith('-01-01') ? ' ' + d.d.slice(0, 4) : ''); } });
+  const peak = D.reduce((a, d) => d.imp > a.imp ? d : a, D[0]); const pi = D.indexOf(peak);
+  svgEl('text', {x: Math.min(xs(pi), W - R - 120), y: ys(peak.imp) - 8, 'text-anchor': pi > D.length * .8 ? 'end' : 'start', class: 'lab strong'}, svg).textContent = `${fmt(peak.imp)} on ${fdate(peak.d)}`;
+  const cursor = svgEl('line', {x1: 0, x2: 0, y1: T, y2: T + ph, stroke: css('--axis'), 'stroke-width': 1, opacity: 0}, svg);
+  const dot = svgEl('circle', {r: 4, fill: css('--s1'), stroke: css('--surface'), 'stroke-width': 2, opacity: 0}, svg);
+  const hit = svgEl('rect', {x: L, y: T, width: pw, height: ph + B, fill: 'transparent'}, svg);
+  hit.addEventListener('mousemove', e => {
+    const r = svg.getBoundingClientRect(); const i = Math.round((e.clientX - r.left) / r.width * W - L) / pw * (D.length - 1); const k = Math.max(0, Math.min(D.length - 1, Math.round(i)));
+    const d = D[k]; cursor.setAttribute('x1', xs(k)); cursor.setAttribute('x2', xs(k)); cursor.setAttribute('opacity', 1); dot.setAttribute('cx', xs(k)); dot.setAttribute('cy', ys(d.imp)); dot.setAttribute('opacity', 1);
+    const ps = POSTS_BY_DAY[d.d] || [];
+    showTip(e, `<b>${fdate(d.d)}</b><br>${fmt(d.imp)} impressions · ${fmt(d.eng)} engagements` + (ps.length ? `<br><span style="opacity:.75">Published:</span> ${ps.map(p => esc(p.text.replace(/\s+/g, ' ').slice(0, 70)) + '…').join('<br>')}` : ''));
+  });
+  hit.addEventListener('mouseleave', () => { cursor.setAttribute('opacity', 0); dot.setAttribute('opacity', 0); hideTip(); });
+}
+
+function medChart(hostId, groups, ariaLabel){
+  const host = document.getElementById(hostId); host.innerHTML = '';
+  const W = 520, H = 220, L = 44, R = 12, T = 22, B = 30, pw = W - L - R, ph = H - T - B;
+  const svg = svgEl('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': ariaLabel}, host);
+  const max = Math.max(1000, ...groups.map(g => g.v)); const topv = Math.ceil(max / 2000) * 2000;
+  for (let v = 0; v <= topv; v += topv / 4) { const yy = T + ph - ph * v / topv; svgEl('line', {x1: L, x2: W - R, y1: yy, y2: yy, class: v ? 'gl' : 'bl'}, svg); svgEl('text', {x: L - 8, y: yy + 4, 'text-anchor': 'end', class: 'ax'}, svg).textContent = compact(v); }
+  const all = median(TOP.map(t => t.imp)); const by = T + ph - ph * all / topv;
+  svgEl('line', {x1: L, x2: W - R, y1: by, y2: by, stroke: css('--ink-2'), 'stroke-width': 1, 'stroke-dasharray': '3 3'}, svg);
+  const note = host.closest('.panel').querySelector('.note'); if (note && !note.dataset.base) { note.dataset.base = 1; note.textContent += ` Dashed line is the median across all posts, ${fmt(all)}.`; }
+  const bw = pw / groups.length, inner = Math.min(bw * .62, 64);
+  groups.forEach((g, i) => {
+    const hgt = ph * g.v / topv, x = L + i * bw + (bw - inner) / 2;
+    if (g.n) { const r = svgEl('rect', {x, y: T + ph - hgt, width: inner, height: hgt, rx: 3, fill: css('--s1'), opacity: g.n < 5 ? .45 : 1, class: 'bar'}, svg); bindTip(r, () => `<b>${g.label}</b><br>${g.n} posts · median ${fmt(g.v)} impressions${g.n < 5 ? ' · small sample' : ''}`); }
+    svgEl('text', {x: x + inner / 2, y: T + ph - hgt - 6, 'text-anchor': 'middle', class: 'lab strong'}, svg).textContent = g.n ? compact(g.v) : 'none';
+    svgEl('text', {x: x + inner / 2, y: H - 10, 'text-anchor': 'middle', class: 'ax'}, svg).textContent = g.label + (g.n ? ` (${g.n})` : '');
+  });
+}
+function renderHits(){
+  const bands = [['<300', 0, 300], ['300 to 1k', 300, 1000], ['1k to 2k', 1000, 2000], ['2k+', 2000, Infinity]];
+  medChart('c-med-len', bands.map(([label, lo, hi]) => { const ps = TOP.filter(t => t.len >= lo && t.len < hi); return {label, n: ps.length, v: median(ps.map(t => t.imp))}; }), 'Median impressions by length');
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  medChart('c-med-wd', days.map((label, i) => { const ps = TOP.filter(t => t.p.wd === i); return {label, n: ps.length, v: median(ps.map(t => t.imp))}; }), 'Median impressions by weekday');
+  const per1k = (t, k) => 1000 * (t[k] || 0) / t.imp;
+  const top = TOP.filter(t => TOP_IDS.has(t.id)), rest = TOP.filter(t => !TOP_IDS.has(t.id));
+  document.getElementById('mix-rows').innerHTML = [['Saves', 'saves'], ['Sends', 'sends'], ['Comments', 'comments'], ['Reposts', 'reposts'], ['Reactions', 'reactions'], ['Followers gained', 'followers_gained']].map(([name, k]) => {
+    const a = median(top.map(t => per1k(t, k))), b = median(rest.map(t => per1k(t, k))); const ratio = b ? a / b : 0;
+    return `<tr><td>${name}</td><td class="num">${a.toFixed(1)}</td><td class="num">${b.toFixed(1)}</td><td class="num"${ratio >= 1.5 ? ' style="font-weight:600"' : ''}>${ratio.toFixed(2)}×</td></tr>`;
+  }).join('');
+  const kinds = [['Text or link', 'text'], ['Image', 'image'], ['Video', 'video'], ['Document (PDF)', 'document'], ['Poll', 'poll'], ['Other upload', 'media_other']];
+  document.getElementById('media-rows').innerHTML = kinds.map(([name, k]) => { const ps = TOP.filter(t => t.media === k); if (!ps.length) return '';
+    return `<tr><td>${name}</td><td class="num">${ps.length}</td><td class="num">${fmt(median(ps.map(t => t.imp)))}</td><td class="num">${(100 * median(ps.map(t => t.rate))).toFixed(2)}%</td><td class="num">${median(ps.map(t => per1k(t, 'saves'))).toFixed(1)}</td></tr>`; }).join('');
+}
+
+function renderFollowers(){
+  const host = document.getElementById('c-fol'); host.innerHTML = '';
+  const fol = {}; (AN.followers || []).forEach(f => fol[f.d] = f.new);
+  const W = 520, H = 220, L = 44, R = 12, T = 14, B = 30, pw = W - L - R, ph = H - T - B;
+  const series = []; let acc = 0; AN.daily.forEach(d => { acc += fol[d.d] || 0; series.push({d: d.d, v: acc, n: fol[d.d] || 0}); });
+  const max = Math.max(1, acc); const topv = Math.ceil(max / 2000) * 2000;
+  const svg = svgEl('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Cumulative new followers'}, host);
+  for (let v = 0; v <= topv; v += topv / 4) { const yy = T + ph - ph * v / topv; svgEl('line', {x1: L, x2: W - R, y1: yy, y2: yy, class: v ? 'gl' : 'bl'}, svg); svgEl('text', {x: L - 8, y: yy + 4, 'text-anchor': 'end', class: 'ax'}, svg).textContent = compact(v); }
+  const xs = i => L + pw * i / (series.length - 1), ys = v => T + ph - ph * v / topv;
+  let d = ''; series.forEach((s, i) => d += (i ? 'L' : 'M') + xs(i) + ',' + ys(s.v));
+  svgEl('path', {d: d + `L${xs(series.length - 1)},${T + ph}L${xs(0)},${T + ph}Z`, fill: css('--s1'), opacity: .12}, svg);
+  svgEl('path', {d, fill: 'none', stroke: css('--s1'), 'stroke-width': 2}, svg);
+  series.forEach((s, i) => { if (s.d.endsWith('-01') && (+s.d.slice(5, 7)) % 3 === 0) svgEl('text', {x: xs(i), y: H - 10, 'text-anchor': 'middle', class: 'ax'}, svg).textContent = new Date(s.d + 'T12:00:00Z').toLocaleString('en-US', {month: 'short', year: '2-digit'}); });
+  const last = series[series.length - 1]; svgEl('circle', {cx: xs(series.length - 1), cy: ys(last.v), r: 4, fill: css('--s1'), stroke: css('--surface'), 'stroke-width': 2}, svg);
+  svgEl('text', {x: xs(series.length - 1) - 8, y: ys(last.v) - 8, 'text-anchor': 'end', class: 'lab strong'}, svg).textContent = '+' + fmt(last.v);
+  const hit = svgEl('rect', {x: L, y: T, width: pw, height: ph, fill: 'transparent'}, svg);
+  hit.addEventListener('mousemove', e => { const r = svg.getBoundingClientRect(); const k = Math.max(0, Math.min(series.length - 1, Math.round(((e.clientX - r.left) / r.width * W - L) / pw * (series.length - 1)))); const s = series[k]; showTip(e, `<b>${fdate(s.d)}</b><br>+${fmt(s.n)} that day · ${fmt(s.v)} since window start`); });
+  hit.addEventListener('mouseleave', hideTip);
+}
+
+(function(){
+  const pct = s => parseFloat(String(s).replace('<', '').replace('%', '')) || 0.5;
+  const blocks = [['Seniority', 'Seniority'], ['Job title', 'Job title'], ['Industry', 'Industry']];
+  document.getElementById('c-demo').innerHTML = blocks.map(([k, title]) => { const rows = (AN.audience[k] || []).slice(0, 6); const mx = Math.max(...rows.map(r => pct(r.pct)), 1);
+    return `<div><h3>${title}</h3><ol>${rows.map(r => `<li><span>${esc(r.v)}</span><span>${r.pct}</span><div class="bar" style="width:${Math.max(4, 100 * pct(r.pct) / mx)}%"></div></li>`).join('')}</ol></div>`; }).join('');
+})();
+
+let topSort = {k: 'imp', dir: -1};
+const MEDIA_LABEL = {text: '', image: 'image', video: 'video', document: 'PDF', poll: 'poll', media_other: 'upload'};
+function renderTop(){
+  const rows = [...TOP].sort((a, b) => ((a[topSort.k] || 0) - (b[topSort.k] || 0)) * topSort.dir || b.imp - a.imp);
+  document.getElementById('top-rows').innerHTML = rows.map(t => { const snip = t.p.text.replace(/\s+/g, ' ');
+    return `<tr><td class="mono" style="white-space:nowrap;color:var(--ink-2)">${t.d}</td><td class="num">${fmt(t.imp)}</td><td class="num">${fmt(t.reactions || 0)}</td><td class="num">${fmt(t.comments || 0)}</td><td class="num">${fmt(t.reposts || 0)}</td><td class="num">${fmt(t.saves || 0)}</td><td class="num">${fmt(t.sends || 0)}</td><td class="num">${fmt(t.fol)}</td><td class="num">${(100 * t.rate).toFixed(1)}%</td><td class="num">${fmt(t.len)}</td><td>${MEDIA_LABEL[t.media] ? `<span class="pill">${MEDIA_LABEL[t.media]}${t.images > 1 ? ' ×' + t.images : ''}</span>` : ''}</td><td><div class="snip">${esc(snip.length > 90 ? snip.slice(0, 90).trimEnd() + '…' : snip)}</div></td><td><a href="${t.url}" target="_blank" rel="noopener" aria-label="Open on LinkedIn">↗</a></td></tr>`; }).join('');
+  document.querySelectorAll('#top-tbl th.sortable').forEach(th => th.dataset.k === topSort.k ? th.setAttribute('aria-sort', topSort.dir < 0 ? 'descending' : 'ascending') : th.removeAttribute('aria-sort'));
+}
+document.querySelectorAll('#top-tbl th.sortable').forEach(th => th.addEventListener('click', () => { topSort = topSort.k === th.dataset.k ? {k: th.dataset.k, dir: -topSort.dir} : {k: th.dataset.k, dir: -1}; renderTop(); }));
+renderTop();
+
+// ---------------------------------------------------------------- content series
+const SERIES_NAME = __SERIES_NAME_JS__; const SERIES_RX = new RegExp(__SERIES_INCLUDE_JS__, 'i'); const SERIES_SLUG = __SERIES_SLUG_JS__;
+const FS = JSON.parse(document.getElementById('series').textContent);
+FS.posts.forEach(p => { const m = TOP_BY_PID[idOf(p.url)]; if (m) { p.impressions = m.imp; p.engagements = m.eng; p.saves = m.saves; p.comments = m.comments; p.reposts = m.reposts; } });
+(function(){ const s = FS.summary; const withImp = FS.posts.filter(p => p.impressions); s.in_linkedin_top50 = withImp.length; s.top50_impressions_total = withImp.reduce((a, p) => a + p.impressions, 0); s.top50_engagements_total = withImp.reduce((a, p) => a + (p.engagements || 0), 0); s.median_impressions_ranked = median(withImp.map(p => p.impressions)); })();
+(function(){
+  const s = FS.summary;
+  document.getElementById('fs-range').textContent = `${fdate(s.first)} to ${fdate(s.latest)}`;
+  const base = WIN.length ? Math.round(100 * TOP.length / WIN.length) : 0;
+  document.getElementById('fs-sub').textContent = `Every post whose text matches the series rule in config.json. Exported as ${SERIES_SLUG}.json and ${SERIES_SLUG}.csv next to the data.`;
+  const tiles = [
+    ['Editions', s.posts, `since ${fdate(s.first)}`],
+    ['Weeks covered', `${Math.round(100 * s.weeks_with_post / s.weeks_since_first)}%`, `${s.weeks_with_post} of ${s.weeks_since_first} weeks`],
+    ['Longest streak', `${s.longest_streak_weeks} wk`, `current: ${s.current_streak_weeks}`],
+    ['Over 10k reach', `${Math.round(100 * FS.posts.filter(p => p.impressions >= 10000).length / s.posts)}%`, `${FS.posts.filter(p => p.impressions >= 10000).length} of ${s.posts} · all posts: ${Math.round(100 * TOP.filter(t => t.imp >= 10000).length / TOP.length)}%`],
+    ['Median reach', compact(s.median_impressions_ranked || 0), `${compact(s.top50_impressions_total)} impressions across the series · all posts: ${compact(median(TOP.map(t => t.imp)))}`],
+    ['Median length', fmt(s.median_chars) + ' ch', 'all posts 2026: ' + fmt((() => { const a = POSTS.filter(p => p.y === 2026).map(p => p.len).sort((x, y) => x - y); return a[Math.floor(a.length / 2)] || 0; })()) + ' ch'],
+  ];
+  document.getElementById('fs-tiles').innerHTML = tiles.map(([k, v, d]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
+  document.getElementById('fs-rows').innerHTML = FS.posts.map(p => `<tr class="row" data-n="${p.n}"><td class="num" style="color:var(--muted)">${p.n}</td><td class="mono" style="white-space:nowrap;color:var(--ink-2)">${p.date}</td><td><div class="snip">${esc(p.title)}</div></td><td class="num">${fmt(p.chars)}</td><td class="num">${fmt(p.impressions || 0)}</td><td class="num">${fmt(p.engagements || 0)}</td><td>${p.url ? `<a href="${p.url}" target="_blank" rel="noopener" aria-label="Open on LinkedIn">↗</a>` : ''}</td></tr>`).join('');
+  document.querySelectorAll('#fs-rows tr.row').forEach(tr => tr.addEventListener('click', e => {
+    if (e.target.tagName === 'A') return; const p = FS.posts[+tr.dataset.n - 1]; const nxt = tr.nextElementSibling;
+    if (nxt && nxt.classList.contains('full')) { nxt.remove(); return; }
+    const full = document.createElement('tr'); full.className = 'full'; full.innerHTML = `<td colspan="7"><div class="txt">${esc(p.text)}</div></td>`; tr.after(full);
+  }));
+})();
+function renderSeries(){
+  const host = document.getElementById('c-fs'); host.innerHTML = '';
+  const P = FS.posts; const floor = 0;
+  document.getElementById('lg-fs').innerHTML = '';
+  const max = Math.max(...P.map(p => p.impressions || 0), floor); const topv = Math.ceil(max / 10000) * 10000;
+  const W = 1100, H = 260, L = 44, R = 12, T = 14, B = 44, pw = W - L - R, ph = H - T - B;
+  const svg = svgEl('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Impressions per ' + SERIES_NAME + ' edition'}, host);
+  for (let v = 0; v <= topv; v += topv / 4) { const yy = T + ph - ph * v / topv; svgEl('line', {x1: L, x2: W - R, y1: yy, y2: yy, class: v ? 'gl' : 'bl'}, svg); svgEl('text', {x: L - 8, y: yy + 4, 'text-anchor': 'end', class: 'ax'}, svg).textContent = compact(v); }
+  const bw = pw / P.length, inner = Math.min(bw * .64, 30);
+  P.forEach((p, i) => {
+    const x = L + i * bw + (bw - inner) / 2; const v = p.impressions || floor; const h = ph * v / topv;
+    const r = svgEl('rect', {x, y: T + ph - h, width: inner, height: h, rx: 3, class: 'bar', fill: p.impressions ? css('--s1') : 'transparent', stroke: p.impressions ? 'none' : css('--muted'), 'stroke-width': p.impressions ? 0 : 1.5, 'stroke-dasharray': p.impressions ? '' : '4 3'}, svg);
+    bindTip(r, () => `<b>#${p.n} · ${fdate(p.date)}</b><br>${esc(p.title)}<br>${p.impressions ? fmt(p.impressions) + ' impressions · ' + fmt(p.engagements) + ' engagements' : 'Not in the top 50, so at most ' + fmt(floor) + ' impressions'} · ${fmt(p.chars)} chars`);
+    svgEl('text', {x: x + inner / 2, y: H - 26, 'text-anchor': 'middle', class: 'ax'}, svg).textContent = p.n;
+    if (i === 0 || p.date.slice(0, 7) !== P[i - 1].date.slice(0, 7)) svgEl('text', {x: x + inner / 2, y: H - 10, 'text-anchor': 'middle', class: 'ax'}, svg).textContent = new Date(p.date + 'T12:00:00Z').toLocaleString('en-US', {month: 'short'});
+    if (p.impressions && p.impressions === max) svgEl('text', {x: x + inner / 2, y: T + ph - h - 6, 'text-anchor': 'middle', class: 'lab strong'}, svg).textContent = compact(p.impressions);
+  });
+}
+
+
+// ---------------------------------------------------------------- quarterly trends
+const qOf = s => { const m = +s.slice(5, 7); return `${s.slice(0, 4)} Q${Math.floor((m - 1) / 3) + 1}`; };
+function renderQuarters(){
+  const host = document.getElementById('c-quarters'); host.innerHTML = '';
+  const fol = {}; (AN.followers || []).forEach(f => fol[f.d] = f.new);
+  const Q = {};
+  const get = k => Q[k] ||= {imp: 0, eng: 0, days: 0, fol: 0, posts: 0, ranked: 0};
+  AN.daily.forEach(d => { const v = get(qOf(d.d)); v.imp += d.imp; v.eng += d.eng; v.days++; v.fol += fol[d.d] || 0; });
+  WIN.forEach(p => { const v = get(qOf(p.d)); v.posts++; if ((TOP_BY_PID[idOf(p.url)]?.imp || 0) >= 10000) v.ranked++; });
+  const keys = Object.keys(Q).sort();
+  document.getElementById('qt-range').textContent = `${keys[0]} to ${keys[keys.length - 1]}`;
+  const metrics = [
+    ['Impressions per post', k => Q[k].posts ? Q[k].imp / Q[k].posts : 0, v => compact(Math.round(v))],
+    ['Engagements per post', k => Q[k].posts ? Q[k].eng / Q[k].posts : 0, v => fmt(Math.round(v))],
+    ['Engagement rate', k => Q[k].imp ? 100 * Q[k].eng / Q[k].imp : 0, v => v.toFixed(2) + '%'],
+    ['Posts published', k => Q[k].posts, v => fmt(v)],
+    ['Posts over 10k impressions', k => Q[k].posts ? 100 * Q[k].ranked / Q[k].posts : 0, v => Math.round(v) + '%'],
+    ['New followers', k => Q[k].fol, v => fmt(v)],
+  ];
+  metrics.forEach(([name, f, label]) => {
+    const box = document.createElement('div'); box.innerHTML = `<h3 style="font-size:13px;font-weight:500;color:var(--ink-2);margin:0 0 4px">${name}</h3>`; host.appendChild(box);
+    const W = 340, H = 160, L = 8, R = 8, T = 22, B = 34, pw = W - L - R, ph = H - T - B;
+    const svg = svgEl('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': name + ' by quarter'}, box);
+    const vals = keys.map(f); const max = Math.max(1, ...vals);
+    svgEl('line', {x1: L, x2: W - R, y1: T + ph, y2: T + ph, class: 'bl'}, svg);
+    const bw = pw / keys.length, inner = bw * .64;
+    keys.forEach((k, i) => {
+      const v = vals[i], hgt = ph * v / max, x = L + i * bw + (bw - inner) / 2, partial = Q[k].days < 85;
+      const r = svgEl('rect', {x, y: T + ph - hgt, width: inner, height: hgt, rx: 3, fill: css('--s1'), opacity: partial ? .45 : 1, class: 'bar'}, svg);
+      bindTip(r, () => `<b>${k}${partial ? ' (partial, ' + Q[k].days + ' days)' : ''}</b><br>${name}: ${label(v)}<br>${fmt(Q[k].imp)} impressions · ${fmt(Q[k].eng)} engagements · ${Q[k].posts} posts`);
+      svgEl('text', {x: x + inner / 2, y: T + ph - hgt - 5, 'text-anchor': 'middle', class: 'lab strong'}, svg).textContent = label(v);
+      svgEl('text', {x: x + inner / 2, y: H - 18, 'text-anchor': 'middle', class: 'ax'}, svg).textContent = k.slice(5);
+      svgEl('text', {x: x + inner / 2, y: H - 6, 'text-anchor': 'middle', class: 'ax'}, svg).textContent = k.slice(0, 4) + (partial ? '*' : '');
+    });
+  });
+  // slices table
+  const median = a => { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : 0; };
+  const slices = [
+    ...TOPICS_ALL.map(([n, rx]) => ['Topic: ' + n, p => rx.test(p.text)]),
+    ['Format: ' + SERIES_NAME + ' edition', p => SERIES_RX.test(p.text)],
+    ['Format: opens with a question', p => p.text.split('\n')[0].includes('?')],
+    ['Format: over 2,000 chars', p => p.len >= 2000],
+    ['Format: under 1,000 chars', p => p.len < 1000],
+    ['Format: carries a hashtag', p => p.tags.length > 0],
+    ['All posts in window', p => true],
+  ];
+  document.getElementById('qt-rows').innerHTML = slices.map(([name, f]) => {
+    const a = WIN.filter(f).map(p => TOP_BY_PID[idOf(p.url)]).filter(Boolean);
+    const strong = name.startsWith('All'); if (!a.length) return '';
+    return `<tr${strong ? ' style="font-weight:600"' : ''}><td>${name}</td><td class="num">${a.length}</td><td class="num">${fmt(median(a.map(t => t.imp)))}</td><td class="num">${Math.round(100 * a.filter(t => t.imp >= 10000).length / a.length)}%</td><td class="num">${median(a.map(t => 1000 * (t.saves || 0) / t.imp)).toFixed(1)}</td><td class="num">${(100 * median(a.map(t => t.rate))).toFixed(2)}%</td></tr>`;
+  }).join('');
+}
+
+
+// ---------------------------------------------------------------- reach over time (snapshot history)
+const HIST = JSON.parse(document.getElementById('history').textContent);
+function renderReach(){
+  const host = document.getElementById('c-rc'); host.innerHTML = '';
+  const snaps = HIST.snapshots || [];
+  const dayMs = 86400000;
+  const rows = Object.entries(HIST.posts || {}).map(([id, pts]) => { const p = POST_BY_ID[id]; if (!p) return null;
+    const pub = p.utc; return {id, p, pts: pts.map(([d, imp, sav, eng, com, rep]) => ({d, age: Math.max(0.5, (new Date(d + 'T12:00:00Z') - pub) / dayMs), imp, sav, eng, com, rep}))}; }).filter(Boolean);
+  document.getElementById('rc-range').textContent = snaps.length ? `${snaps.length} collection${snaps.length === 1 ? '' : 's'}, ${fdate(snaps[0])} to ${fdate(snaps[snaps.length - 1])}` : 'no collections yet';
+  const multi = rows.filter(r => r.pts.length >= 2);
+  document.getElementById('rc-sub').textContent = `${rows.length} posts have at least one collection, ${multi.length} have two or more. Every weekly run adds a point to every post, so the curves fill in from the left as new posts age.`;
+  // chart: posts published within 120 days of the latest snapshot
+  const latest = snaps.length ? new Date(snaps[snaps.length - 1] + 'T12:00:00Z') : new Date();
+  const newest = rows.filter(r => r.pts.length).sort((a, b) => b.p.utc - a.p.utc);
+  const colored = newest.slice(0, 4);
+  const maxAge = Math.max(35, ...colored.flatMap(r => r.pts.map(q => q.age + 3)));
+  const recent = newest.map(r => ({...r, pts: r.pts.filter(q => q.age <= maxAge)})).filter(r => r.pts.length);
+  const W = 1100, H = 320, L = 52, R = 150, T = 14, B = 40, pw = W - L - R, ph = H - T - B;
+  const svg = svgEl('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Impressions by days since publishing'}, host);
+  const xs = a => L + pw * Math.min(a, maxAge) / maxAge;
+  const vals = recent.flatMap(r => r.pts.map(q => q.imp)).filter(v => v > 0);
+  const ymin = Math.max(100, Math.min(...vals, 1000)), ymax = Math.max(...vals, 10000) * 1.2;
+  const ys = v => T + ph - ph * (Math.log10(Math.max(v, ymin)) - Math.log10(ymin)) / (Math.log10(ymax) - Math.log10(ymin));
+  [1000, 3000, 10000, 30000, 100000].filter(v => v >= ymin && v <= ymax).forEach(v => { svgEl('line', {x1: L, x2: W - R, y1: ys(v), y2: ys(v), class: 'gl'}, svg); svgEl('text', {x: L - 8, y: ys(v) + 4, 'text-anchor': 'end', class: 'ax'}, svg).textContent = compact(v); });
+  svgEl('line', {x1: L, x2: W - R, y1: T + ph, y2: T + ph, class: 'bl'}, svg);
+  const step = maxAge > 60 ? 14 : 7;
+  for (let a = 0; a <= maxAge; a += step) svgEl('text', {x: xs(a), y: H - 22, 'text-anchor': 'middle', class: 'ax'}, svg).textContent = a;
+  svgEl('text', {x: L + pw / 2, y: H - 6, 'text-anchor': 'middle', class: 'lab'}, svg).textContent = 'days since publishing';
+  if (!recent.length) { svgEl('text', {x: L + pw / 2, y: T + ph / 2, 'text-anchor': 'middle', class: 'lab'}, svg).textContent = 'No collected post is younger than ' + Math.round(maxAge) + ' days yet.'; }
+  const labels = [];
+  document.getElementById('lg-rc').innerHTML = colored.map((r, i) => `<span><i style="background:${css(SLOTS_RC[i])}"></i>${fdate(r.p.d.slice(0, 10))}</span>`).join('') + (recent.length > colored.length ? `<span><i style="background:var(--axis)"></i>${recent.length - colored.length} older, first ${Math.round(maxAge)} days</span>` : '');
+  [...recent].reverse().forEach(r => {
+    const ci = colored.findIndex(c => c.id === r.id); const color = ci >= 0 ? css(SLOTS_RC[ci]) : css('--axis');
+    const pts = [...r.pts].sort((a, b) => a.age - b.age);
+    if (pts.length > 1) svgEl('path', {d: pts.map((q, i) => (i ? 'L' : 'M') + xs(q.age) + ',' + ys(q.imp)).join(''), fill: 'none', stroke: color, 'stroke-width': ci >= 0 ? 2 : 1.25, 'stroke-linejoin': 'round', opacity: ci >= 0 ? 1 : .7}, svg);
+    pts.forEach(q => { const c = svgEl('circle', {cx: xs(q.age), cy: ys(q.imp), r: ci >= 0 ? 4 : 3, fill: color, stroke: css('--surface'), 'stroke-width': 1.5}, svg);
+      bindTip(c, () => `<b>Published ${fdate(r.p.d.slice(0, 10))} · day ${Math.round(q.age)} (collected ${fdate(q.d)})</b><br>${esc(r.p.text.replace(/\s+/g, ' ').slice(0, 90))}…<br>${fmt(q.imp)} impressions · ${fmt(q.sav)} saves · ${fmt(q.com)} comments · ${fmt(q.rep)} reposts`); });
+    if (ci >= 0) { const last = pts[pts.length - 1]; labels.push({x: xs(last.age) + 8, y: ys(last.imp), text: fdate(r.p.d.slice(0, 10)).slice(0, 6) + ' · ' + compact(last.imp), color}); }
+  });
+  labels.sort((a, b) => a.y - b.y); for (let i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < 14) labels[i].y = labels[i - 1].y + 14;
+  labels.forEach(l => { svgEl('text', {x: Math.min(l.x, W - R + 4), y: l.y + 4, class: 'lab strong'}, svg).textContent = l.text; });
+
+  // growth table between the two latest snapshots
+  const tb = document.getElementById('rc-growth');
+  if (snaps.length < 2) { tb.innerHTML = `<tr><td colspan="5" style="color:var(--muted)">Needs two collections. The first weekly run adds the second.</td></tr>`; }
+  else {
+    const [a, b] = snaps.slice(-2);
+    document.getElementById('rc-growth-note').textContent = `Change in impressions from ${fdate(a)} to ${fdate(b)}.`;
+    const g = rows.map(r => { const pa = r.pts.find(q => q.d === a), pb = r.pts.find(q => q.d === b); return pa && pb ? {r, gain: pb.imp - pa.imp, pct: pa.imp ? (pb.imp - pa.imp) / pa.imp : 0, now: pb.imp, sav: pb.sav - pa.sav, age: pb.age} : null; }).filter(Boolean).sort((x, y) => y.gain - x.gain).slice(0, 8);
+    tb.innerHTML = g.length ? g.map(x => `<tr><td><div class="snip">${esc(x.r.p.text.replace(/\s+/g, ' ').slice(0, 70))}…</div><div class="count">${fdate(x.r.p.d.slice(0, 10))}</div></td><td class="num">${Math.round(x.age)}d</td><td class="num">${fmt(x.now)}</td><td class="num">+${fmt(x.gain)} <span style="color:var(--muted)">(${x.pct >= 0.995 ? '+' + Math.round(x.pct * 100) + '%' : '+' + Math.round(x.pct * 100) + '%'})</span></td><td class="num">${x.sav >= 0 ? '+' : ''}${fmt(x.sav)}</td></tr>`).join('') : `<tr><td colspan="5" style="color:var(--muted)">No post was collected in both of the last two snapshots.</td></tr>`;
+  }
+
+  // reach shape: median share of day-28 impressions reached by day N, over posts with early and late points
+  const sh = document.getElementById('c-rc-shape'); sh.innerHTML = '';
+  const eligible = rows.filter(r => r.pts.some(q => q.age <= 3) && r.pts.some(q => q.age >= 28));
+  if (eligible.length < 5) { sh.innerHTML = `<p class="note" style="margin-top:8px">${eligible.length} of the required 5 posts have both an early (day 3 or sooner) and a late (day 28 or later) collection. With weekly runs, a post published this week qualifies in about a month.</p>`; return; }
+  const days = [1, 2, 3, 5, 7, 10, 14, 21, 28];
+  const at = (r, day) => { const pts = [...r.pts].sort((a, b) => a.age - b.age); let best = null; for (const q of pts) if (q.age <= day) best = q; return best ? best.imp : null; };
+  const series = days.map(day => { const shares = eligible.map(r => { const ref = at(r, 28), v = at(r, day); return ref && v != null ? v / ref : null; }).filter(v => v !== null); return shares.length ? median(shares) : null; });
+  const W2 = 520, H2 = 220, L2 = 40, R2 = 12, T2 = 12, B2 = 30, pw2 = W2 - L2 - R2, ph2 = H2 - T2 - B2;
+  const s2 = svgEl('svg', {viewBox: `0 0 ${W2} ${H2}`, role: 'img', 'aria-label': 'Share of day-28 reach by day'}, sh);
+  [0, .25, .5, .75, 1].forEach(v => { const yy = T2 + ph2 - ph2 * v; svgEl('line', {x1: L2, x2: W2 - R2, y1: yy, y2: yy, class: v ? 'gl' : 'bl'}, s2); svgEl('text', {x: L2 - 8, y: yy + 4, 'text-anchor': 'end', class: 'ax'}, s2).textContent = Math.round(v * 100) + '%'; });
+  const x2 = i => L2 + pw2 * i / (days.length - 1);
+  let d = ''; series.forEach((v, i) => { if (v === null) return; d += (d ? 'L' : 'M') + x2(i) + ',' + (T2 + ph2 - ph2 * Math.min(v, 1)); });
+  svgEl('path', {d, fill: 'none', stroke: css('--s1'), 'stroke-width': 2}, s2);
+  series.forEach((v, i) => { svgEl('text', {x: x2(i), y: H2 - 10, 'text-anchor': 'middle', class: 'ax'}, s2).textContent = 'd' + days[i]; if (v === null) return; const c = svgEl('circle', {cx: x2(i), cy: T2 + ph2 - ph2 * Math.min(v, 1), r: 4, fill: css('--s1'), stroke: css('--surface'), 'stroke-width': 2}, s2); bindTip(c, () => `<b>Day ${days[i]}</b><br>median ${Math.round(v * 100)}% of day-28 impressions, ${eligible.length} posts`); });
+}
+const SLOTS_RC = ['--s1', '--s2', '--s3', '--s4'];
+
+function renderPerf(){ renderDaily(); renderHits(); renderFollowers(); renderSeries(); renderQuarters(); renderReach(); }
+
+function renderEra(){ renderMonth(); renderLen(); renderHeat(); renderTopic(); renderGiven(); renderPerf(); }
+renderEra(); renderTable();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', renderEra);
+new MutationObserver(renderEra).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
+</script>

@@ -85,7 +85,20 @@ for p in sorted((p for p in posts if SERIES.search(p["text"]) and not SKIP.searc
     })
 
 if not series:
-    sys.exit(f"no posts match the series rule {S['include']!r}; check config.json")
+    # Not running a recurring series is a valid setup: config.example.json documents "$^"
+    # for exactly that, and SKILL.md tells users to set it. Write the empty export so the
+    # downstream scripts find the file they expect, and exit clean.
+    os.makedirs(out_dir, exist_ok=True)
+    empty = {"posts": 0, "in_window": 0, "with_metrics": 0, "weeks_with_post": 0, "weeks_since_first": 0,
+             "impressions_total": 0, "engagements_total": 0, "median_impressions": None}
+    with open(os.path.join(out_dir, S["slug"] + ".json"), "w", encoding="utf-8") as fh:
+        json.dump({"summary": empty, "posts": []}, fh, ensure_ascii=False, indent=2)
+    if S["include"] == "$^":
+        print(f"no series configured (include is '$^') -> empty {S['slug']}.json")
+    else:
+        print(f"no posts match the series rule {S['include']!r} -> empty {S['slug']}.json; "
+              f"check config.json if you expected matches", file=sys.stderr)
+    sys.exit(0)
 
 # cadence: weeks covered since the first post
 first = date.fromisoformat(series[0]["date"])

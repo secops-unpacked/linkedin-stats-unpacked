@@ -107,7 +107,22 @@ with open(os.path.join(here, "post_metrics.csv"), "w", newline="", encoding="utf
 print(f"posts.json: +{added} new posts ({len(posts['posts'])} total). metrics: {len(collected_ids)} collected today, {len(rows)} in latest view, snapshot saved.")
 
 # 3. downstream
-subprocess.run([sys.executable, os.path.join(scripts, "series.py")], check=False, stdout=subprocess.DEVNULL, cwd=here)
-subprocess.run([sys.executable, os.path.join(scripts, "build.py")], check=True, cwd=here)
-subprocess.run([sys.executable, os.path.join(scripts, "db.py")], check=False, cwd=here)
-subprocess.run([sys.executable, os.path.join(scripts, "report.py")], check=False, cwd=here)
+# check=False on the optional steps, but never silently: a failure here used to leave the
+# previous run's dashboards and report in place while weekly.py still reported success,
+# so a stale report could go unnoticed for weeks. Name what failed and exit non-zero.
+def run(script, required=False, quiet=False):
+    r = subprocess.run([sys.executable, os.path.join(scripts, script)],
+                       cwd=here, stdout=subprocess.DEVNULL if quiet else None)
+    if r.returncode == 0:
+        return True
+    msg = f"{script} failed (exit {r.returncode}); its output was NOT regenerated"
+    if required:
+        sys.exit(f"weekly: {msg}")
+    print(f"weekly: {msg}", file=sys.stderr)
+    return False
+
+failed = [s for s in (("series.py", False, True), ("build.py", True, False),
+                      ("db.py", False, False), ("report.py", False, False))
+          if not run(s[0], required=s[1], quiet=s[2])]
+if failed:
+    sys.exit(f"weekly: finished with {len(failed)} failed step(s): {', '.join(f[0] for f in failed)}")

@@ -132,6 +132,8 @@ def lines(series_list, width=760, height=240, xlab="days since publish", fmt=k):
         out.append(f'<text class="ax" x="{X(xv):.1f}" y="{height-bp+16}" text-anchor="middle">{xv:.0f}</text>')
     out.append(f'<text class="lab" x="{lp+iw/2:.1f}" y="{height-4}" text-anchor="middle">{e(xlab)}</text>')
     for s in series_list:
+        if not s["points"]:
+            continue
         d = " ".join(f"{'M' if i == 0 else 'L'}{X(x):.1f},{Y(y):.1f}" for i, (x, y) in enumerate(s["points"]))
         out.append(f'<path d="{d}" fill="none" stroke="{s["color"]}" stroke-width="{s.get("width", 1.5)}" stroke-linejoin="round" opacity="{s.get("opacity", 1)}"><title>{e(s["label"])}</title></path>')
         x, y = s["points"][-1]
@@ -340,9 +342,20 @@ add(f"""<section id="reach"><h2>What drives reach</h2>
 <p class="sub">Length first, then the day. Everything else is checked inside length bands before it gets a sentence.</p>
 <h3>Length</h3>""")
 add(hbar([{"g": BAND_LABEL[r["group"]] + " chars", **r} for r in band_rows], "g", "median_impressions", ordinal=ORD))
-add(f"""<p class="finding">Median reach climbs with every band: {k(b['<300']['median_impressions'])} under 300 characters, {k(b['300-1k']['median_impressions'])} at 300 to 1k,
-{k(b['1k-2k']['median_impressions'])} at 1k to 2k, {k(b['2k+']['median_impressions'])} over 2k. Spearman with impressions {n1(chars_corr, 2)}, the strongest single feature.
-Share of posts over 10k impressions: {pc(b['<300']['share_over_10k'], 0)}, {pc(b['300-1k']['share_over_10k'], 0)}, {pc(b['1k-2k']['share_over_10k'], 0)}, {pc(b['2k+']['share_over_10k'], 0)} by band.</p>""")
+# b only holds bands that actually have posts, and whether reach climbs with length is
+# a fact about this account, not a given. Say what the data says, about the bands it has.
+present = [bd for bd in BANDS if bd in b]
+if present:
+    meds = [b[bd]["median_impressions"] for bd in present]
+    climbs = len(meds) > 1 and all(x is not None and y is not None and y > x for x, y in zip(meds, meds[1:]))
+    strongest = chars_corr is not None and corr_imp and abs(chars_corr) >= max(abs(r["spearman"]) for r in corr_imp)
+    lead = "Median reach climbs with every band" if climbs else "Median reach by band"
+    by_band = ", ".join(f"{BAND_LABEL[bd]} {k(b[bd]['median_impressions'])}" for bd in present)
+    over10k = ", ".join(f"{BAND_LABEL[bd]} {pc(b[bd]['share_over_10k'], 0)}" for bd in present)
+    corr_txt = (f" Spearman with impressions {n1(chars_corr, 2)}"
+                + (", the strongest single feature." if strongest else ".")) if chars_corr is not None else ""
+    add(f"""<p class="finding">{lead}, in characters: {by_band}.{corr_txt}
+Share of posts over 10k impressions: {over10k}.</p>""")
 add(table([("Band", lambda r: BAND_LABEL[r["group"]] + " chars", "", None), ("n", "n", "num", n0), ("Median", "median_impressions", "num", n0), ("P25", "p25_impressions", "num", n0), ("P75", "p75_impressions", "num", n0),
            ("Over 10k", "share_over_10k", "num", lambda v: pc(v, 0)), ("Eng. rate", "median_engagement_rate", "num", pc), ("Saves /1k", "median_saves_per_1k", "num", n1), ("Sends /1k", "median_sends_per_1k", "num", lambda v: n1(v, 2))], band_rows))
 
@@ -378,7 +391,13 @@ add("<h3>Link placement</h3>")
 add(table([("Band", "band", "", None), ("Placement", "placement", "", None), ("n", "n", "num", n0), ("Median", "median_impressions", "num", n0), ("Eng. rate", "median_engagement_rate", "num", pc), ("Saves /1k", "median_saves_per_1k", "num", n1)], lk))
 l12 = {r["placement"]: r for r in lk if r["band"] == BAND_LABEL["1k-2k"]}
 if len(l12) >= 2:
-    add(f"<p class='finding'>In the 1k to 2k band, where most posts sit, link in text {k(l12.get('link in text',{}).get('median_impressions'))}, link in own comment {k(l12.get('link in own comment',{}).get('median_impressions'))}, no link {k(l12.get('no link',{}).get('median_impressions'))}. Placement is not a lever. Put the link where the reader needs it.</p>")
+    l12_meds = [r["median_impressions"] for r in l12.values() if r.get("median_impressions")]
+    # Within one band, call it a lever only if the best placement clears the worst by >15%.
+    spread = (max(l12_meds) / min(l12_meds)) if len(l12_meds) > 1 and min(l12_meds) else 1
+    verdict = ("Placement is not a lever. Put the link where the reader needs it."
+               if spread < 1.15 else
+               f"The spread across placements is {n1(spread, 2)}x, so it is worth a look, but length confounds it: compare inside this band only.")
+    add(f"<p class='finding'>In the {BAND_LABEL['1k-2k']} band, link in text {k(l12.get('link in text',{}).get('median_impressions'))}, link in own comment {k(l12.get('link in own comment',{}).get('median_impressions'))}, no link {k(l12.get('no link',{}).get('median_impressions'))}. {verdict}</p>")
 add("</section>")
 
 # engagement mix
@@ -390,9 +409,27 @@ add(hbar([{"g": r["metric"].replace("_per_1k", "").replace("_", " "), **r} for r
          ordinal=["var(--s1)" if r["ratio"] >= 1.3 else "var(--axis)" for r in tq_rows]))
 add(table([("Metric", lambda r: r["metric"].replace("_", " "), "", None), ("Top quartile", "top_quartile_median", "num", lambda v: n1(v, 2)), ("Rest", "rest_median", "num", lambda v: n1(v, 2)), ("Ratio", "ratio", "num", lambda v: "–" if v is None else f"{v:.2f}x")], tq))
 sv, sn, cm, rp = (top_ratio.get(x, {}).get("ratio") for x in ("saves_per_1k", "sends_per_1k", "comments_per_1k", "reposts_per_1k"))
-add(f"""<p class="finding">Saves run {n1(sv,2)}x and sends {n1(sn,2)}x per 1k in the top quartile. Comments ({n1(cm,2)}x) and reposts ({n1(rp,2)}x) do not separate winners from the rest.
-The top quartile is also longer: {n0(top_ratio.get('chars',{}).get('top_quartile_median'))} characters and {n0(top_ratio.get('paragraphs',{}).get('top_quartile_median'))} paragraphs median against {n0(top_ratio.get('chars',{}).get('rest_median'))} and {n0(top_ratio.get('paragraphs',{}).get('rest_median'))}.
-Write the thing someone bookmarks, not the thing someone argues with.</p>""")
+# Which actions separate the top quartile differs by account. Sort them, do not assume.
+LABEL_1K = {"saves_per_1k": "saves", "sends_per_1k": "sends", "comments_per_1k": "comments", "reposts_per_1k": "reposts"}
+ratios = [(LABEL_1K[m], top_ratio.get(m, {}).get("ratio")) for m in LABEL_1K]
+seps = [(nm, r) for nm, r in ratios if r is not None and r >= 1.3]
+flats = [(nm, r) for nm, r in ratios if r is not None and r < 1.3]
+seps.sort(key=lambda x: -x[1])
+if seps:
+    sep_txt = " and ".join(f"{nm} at {n1(r, 2)}x" for nm, r in seps)
+    lead = f"Per 1,000 impressions, {sep_txt} separate the top quartile."
+    if flats:
+        lead += " " + ", ".join(f"{nm} ({n1(r, 2)}x)" for nm, r in flats).capitalize() + \
+                (" does not." if len(flats) == 1 else " do not.")
+    closing = " Write the thing someone bookmarks, not the thing someone argues with." if any(nm in ("saves", "sends") for nm, _ in seps) else ""
+else:
+    lead = "No engagement type separates the top quartile by more than 1.3x per 1,000 impressions: " + \
+           ", ".join(f"{nm} {n1(r, 2)}x" for nm, r in ratios if r is not None) + "."
+    closing = ""
+chars_top, chars_rest = top_ratio.get("chars", {}).get("top_quartile_median"), top_ratio.get("chars", {}).get("rest_median")
+longer = (f" The top quartile is also longer: {n0(chars_top)} characters and {n0(top_ratio.get('paragraphs',{}).get('top_quartile_median'))} paragraphs median against {n0(chars_rest)} and {n0(top_ratio.get('paragraphs',{}).get('rest_median'))}."
+          if chars_top and chars_rest and chars_top > chars_rest else "")
+add(f"""<p class="finding">{lead}{longer}{closing}</p>""")
 add("<h3>Correlations with reach</h3>")
 cr = [r for r in corr_imp if abs(r["spearman"]) >= 0.05][:14]
 add(hbar([{"g": r["feature"].replace("topic:", "").replace("_", " "), "v": abs(r["spearman"]), "s": r["spearman"], **{"n": r["n"]}} for r in cr], "g", "v", n_key=None,
@@ -418,7 +455,9 @@ add(hbar(media_rows, "group", "median_impressions"))
 add(table([("Media", "group", "", None), ("n", "n", "num", n0), ("Median", "median_impressions", "num", n0), ("Eng. rate", "median_engagement_rate", "num", pc), ("Saves /1k", "median_saves_per_1k", "num", n1), ("Median chars", "median_chars", "num", n0)], media_rows))
 mi, mt = (next((r for r in media_rows if r["group"] == g), None) for g in ("image", "text"))
 if mi and mt:
-    add(f"<p class='finding'>Image posts {k(mi['median_impressions'])} median (n={mi['n']}) against {k(mt['median_impressions'])} for text (n={mt['n']}), with {n1(mi['median_saves_per_1k'])} saves per 1k against {n1(mt['median_saves_per_1k'])}. The images are mostly frameworks and maps, so the two effects are tangled. Attach the framework.</p>")
+    ahead = mi["median_impressions"] and mt["median_impressions"] and mi["median_impressions"] > mt["median_impressions"]
+    verb = "ahead of" if ahead else "against"
+    add(f"<p class='finding'>Image posts {k(mi['median_impressions'])} median (n={mi['n']}) {verb} {k(mt['median_impressions'])} for text (n={mt['n']}), with {n1(mi['median_saves_per_1k'])} saves per 1k against {n1(mt['median_saves_per_1k'])}. Media and length are tangled, so read this against the within-band table above before acting on it.</p>")
 add("</section>")
 
 # trend
@@ -474,7 +513,12 @@ add(table([("Band", "band", "", lambda v: v + " chars"), (S + " n", "series_n", 
            ("Ratio", lambda r: (r["series_med"] / r["other_med"]) if r["series_med"] and r["other_med"] else None, "num", lambda v: "–" if v is None else f"{v:.2f}x")], series_band))
 sb = next((r for r in series_band if r["band"] == BAND_LABEL["1k-2k"] and r["series_n"] >= 4), None)
 if sb:
-    add(f"<p class='finding'>At 1k to 2k characters, editions run {k(sb['series_med'])} against {k(sb['other_med'])} for other posts of the same length (n={sb['series_n']} vs {sb['other_n']}). The slot and the format carry reach beyond what length explains.</p>")
+    lift = (sb["series_med"] / sb["other_med"]) if sb["series_med"] and sb["other_med"] else None
+    if lift is None:      verdict = ""
+    elif lift >= 1.15:    verdict = " The slot and the format carry reach beyond what length explains."
+    elif lift <= 0.87:    verdict = " Editions trail other posts of the same length. The slot is not doing the work here."
+    else:                 verdict = " Within this band the two are level, so the slot is not adding reach on its own."
+    add(f"<p class='finding'>At {BAND_LABEL['1k-2k']} characters, editions run {k(sb['series_med'])} against {k(sb['other_med'])} for other posts of the same length (n={sb['series_n']} vs {sb['other_n']}).{verdict}</p>")
 if weeks_missed:
     add(f"<p class='note'>Weeks missed since the first edition: {', '.join(e(w) for w in weeks_missed)}.</p>")
 add("<h3>All editions</h3>")
@@ -491,7 +535,7 @@ add("</section>")
 # best posts
 add(f"""<section id="best"><h2>Best posts</h2><p class="sub">Top 15 by impressions, then top 10 by saves per 1k, the metric that travels with reach.</p><h3>By impressions</h3>""")
 fl = lambda p: f"<a href='{e(p['url'])}' target='_blank' rel='noopener'>{e((p['first_line'] or '')[:110])}</a>" + (" <span class='pill series'>series</span>" if p["is_series"] else "")
-cols_best = [("Date", "date_local", "dt", fdate), ("Day", "weekday", "", lambda v: v[:3]), ("Post", fl, "fl", lambda v: v), ("Chars", "chars", "num", n0), ("Media", "media", "", None), ("Impressions", "impressions", "num", n0), ("Saves /1k", "saves_per_1k", "num", n1), ("Sends /1k", "sends_per_1k", "num", lambda v: n1(v, 2)), ("Comments", "comments", "num", n0)]
+cols_best = [("Date", "date_local", "dt", fdate), ("Day", "weekday", "", lambda v: (v or "")[:3]), ("Post", fl, "fl", lambda v: v), ("Chars", "chars", "num", n0), ("Media", "media", "", None), ("Impressions", "impressions", "num", n0), ("Saves /1k", "saves_per_1k", "num", n1), ("Sends /1k", "sends_per_1k", "num", lambda v: n1(v, 2)), ("Comments", "comments", "num", n0)]
 add(table(cols_best, top_imp, cls="archive"))
 add("<h3>By saves per 1k</h3>")
 add(table(cols_best, top_sav, cls="archive"))

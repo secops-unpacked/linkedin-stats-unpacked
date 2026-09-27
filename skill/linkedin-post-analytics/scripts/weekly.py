@@ -14,7 +14,8 @@ What it does:
   1. Appends discovered posts to posts.json (dedup by id).
   2. Writes snapshots/post_metrics_<today>.json and replaces post_metrics.json with the merged latest view.
      Media type for known posts is carried over from the previous post_metrics.json when the CSV has none.
-  3. Runs series.py, build.py, db.py (rebuilds posting-record.sqlite) and report.py (dist/posting-report.html).
+  3. Runs series.py, build.py, db.py (rebuilds posting-record.sqlite), report.py and dashboard.py
+     (dist/posting-report.html and dist/posting-dashboard.html).
 """
 import csv, json, os, re, subprocess, sys
 from datetime import datetime
@@ -122,7 +123,8 @@ def run(script, required=False, quiet=False):
     return False
 
 failed = [s for s in (("series.py", False, True), ("build.py", True, False),
-                      ("db.py", False, False), ("report.py", False, False))
+                      ("db.py", False, False), ("report.py", False, False),
+                      ("dashboard.py", False, False))
           if not run(s[0], required=s[1], quiet=s[2])]
 if failed:
     sys.exit(f"weekly: finished with {len(failed)} failed step(s): {', '.join(f[0] for f in failed)}")

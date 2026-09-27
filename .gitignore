@@ -7,6 +7,7 @@ post_metrics.json
 post_metrics.csv
 series.json
 series.csv
+notes.json
 *-siem.json
 *-siem.csv
 *-roundup.json

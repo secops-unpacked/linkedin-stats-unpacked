@@ -70,9 +70,24 @@ Gotchas already handled in collector.js, in case it must be rewritten:
 - Views `v_posts` (post + latest metrics + topics; start here), `v_reach_curve`, `v_growth`, `v_series`. `schema_notes` documents every column from inside the file: `SELECT * FROM schema_notes`.
 - Run it after any change to `config.json` topics or the series rule. `weekly.py` runs it automatically. Query with `python3 -c "import sqlite3..."` when the `sqlite3` binary is missing. SQLite cannot lock files on bridge or network mounts: db.py builds in a temp folder and copies the file in; copy it out before querying it from such a mount.
 
+## Dashboard (`scripts/dashboard.py`)
+
+`python3 scripts/dashboard.py` reads the database and writes `dist/posting-dashboard.html`: one filterable page rather than a document. An account snapshot from the daily series, a tab for the most recent collection against the whole archive, then search, date range, series, length and sort filters that every panel below follows. Panels: reach leaders, reach by length band, a topic to weekday to length to engagement Sankey, a series-versus-rest Sankey, the engagement fingerprint radar, length against reach on a log scale, weekday by length, cadence by month, quarters, topics, media, and a paginated table where any post opens its full text. It exports the current selection as CSV. Run it after `db.py`; `weekly.py` runs it last.
+
+The three review panels (what went well, what went wrong, next up) come from an optional `notes.json` in the workspace and stay hidden without it. Nothing computes them: they are the user's own read on the period, and the point is to keep it next to the numbers.
+
+```json
+{"title": "Week of 21 September", "period": "Five posts, two editions.",
+ "good": ["The Tuesday essay carried, 2.1x the band median."],
+ "bad": ["Thursday's link post went out at 300 characters and died."],
+ "next": ["Move the link into the first comment and re-test."]}
+```
+
+Offer to write it from what the run found, then let the user edit. Never invent an entry the numbers do not support, and never put anything in `bad` about a person.
+
 ## Report (`scripts/report.py`)
 
-`python3 scripts/report.py` reads the database and writes `dist/posting-report.html`: a single document, read top to bottom, covering cadence since the first post, reach by length, weekday (within bands), hour, link placement, what travels with reach (top quartile vs rest, correlations), topics and media, quarterly trend and followers, reach over time from the snapshots, a dedicated series section (tiles, reach per edition, series vs other posts within length bands, missed weeks, the editions table, and the full text of every edition), best posts, and a sortable archive of every post. `weekly.py` runs it after `db.py`. Publish it as a third artifact and keep its URL in `config.json` under `dashboards.posting_report_url`.
+`python3 scripts/report.py` reads the database and writes `dist/posting-report.html`: a single document, read top to bottom, covering cadence since the first post, reach by length, weekday (within bands), hour, link placement, what travels with reach (top quartile vs rest, correlations), topics and media, quarterly trend and followers, reach over time from the snapshots, a dedicated series section (tiles, reach per edition, series vs other posts within length bands, missed weeks, the editions table, and the full text of every edition), best posts, and a sortable archive of every post. `weekly.py` runs it after `db.py`. Publish it as a third artifact and keep its URL in `config.json` under `dashboards.posting_report_url`. The dashboard is the fourth, under `dashboards.posting_dashboard_url`.
 
 ## Publish
 

@@ -96,7 +96,20 @@ def no_links(ws):
     save(ws, "posts.json", d)
 
 
+def with_notes(ws):
+    """notes.json present: the three review panels should render."""
+    save(ws, "notes.json", {"title": "A week", "period": "Five posts.",
+                            "good": ["One worked."], "bad": ["One did not."], "next": ["Try the other slot."]})
+
+
+def empty_notes(ws):
+    """notes.json present but empty: the panels stay hidden, and it is not an error."""
+    save(ws, "notes.json", {"good": [], "bad": [], "next": []})
+
+
 CASES = [
+    ("notes.json with review panels", with_notes, None),
+    ("notes.json present but empty", empty_notes, None),
     ("all posts in one length band", only_one_band, None),
     ("no analytics.json (optional xlsx absent)", no_analytics, None),
     ("no snapshots (first run)", no_snapshots, None),
@@ -115,7 +128,7 @@ def main():
     for label, mutate, config in CASES:
         ws = workspace(mutate, config)
         broke = []
-        for script in ("series.py", "build.py", "db.py", "report.py"):
+        for script in ("series.py", "build.py", "db.py", "report.py", "dashboard.py"):
             r = subprocess.run([sys.executable, os.path.join(SCRIPTS, script)],
                                cwd=ws, capture_output=True, text=True)
             if r.returncode != 0:
@@ -123,7 +136,7 @@ def main():
                 broke.append(f"{script}: {tail}")
         expected = ["dist/posting-record.html", "dist/post-explorer.html"]
         if os.path.exists(os.path.join(ws, "posting-record.sqlite")):
-            expected.append("dist/posting-report.html")
+            expected += ["dist/posting-report.html", "dist/posting-dashboard.html"]
         missing = [f for f in expected if not os.path.exists(os.path.join(ws, f))]
         if broke or missing:
             failures.append((label, broke, missing))

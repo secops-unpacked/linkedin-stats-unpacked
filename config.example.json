@@ -42,6 +42,7 @@
   "dashboards": {
     "posting_record_url": "",
     "post_explorer_url": "",
-    "posting_report_url": ""
+    "posting_report_url": "",
+    "posting_dashboard_url": ""
   }
 }

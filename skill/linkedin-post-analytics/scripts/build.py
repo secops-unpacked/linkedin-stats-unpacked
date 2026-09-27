@@ -9,10 +9,10 @@ Reads from the workspace (current directory, or PR_WORKSPACE):
   <series slug>.json  from series.py (optional)
 Writes dist/posting-record.html and dist/post-explorer.html.
 """
-import html, json, os, re, sys
+import json, os, re, sys
 from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from pr_common import load_config, read_json, wpath
+from pr_common import html_text, js_data, js_literal, load_config, read_json, wpath
 
 cfg = load_config()
 _sd = os.path.dirname(os.path.abspath(__file__))
@@ -66,18 +66,9 @@ explorer.sort(key=lambda r: r["d"], reverse=True)
 # Config values reach a page that is meant to be published. Each substitution site has a
 # context (HTML text or JavaScript source) and needs the escaping for that context, never
 # the other one. Placeholders ending in _JS_ expand to a complete JS literal, quotes included,
-# so the template never wraps one in quotes of its own.
-def inline(obj):
-    return json.dumps(obj, ensure_ascii=False).replace("</", "<\\/")
-
-
-def js_literal(s):
-    """A complete JS string literal. '</' is broken up so it cannot close the <script> block."""
-    return json.dumps(s, ensure_ascii=False).replace("</", "<\\/")
-
-
-def html_text(s):
-    return html.escape(str(s))
+# so the template never wraps one in quotes of its own. The helpers live in pr_common so
+# build.py and dashboard.py cannot drift apart on this.
+inline = js_data
 
 
 def topics_js():

@@ -3,7 +3,7 @@
 The workspace is the folder holding config.json and the data files. It is the current
 directory, unless PR_WORKSPACE is set. Scripts never write outside it.
 """
-import json, os, sys
+import html, json, os, sys
 
 DEFAULTS = {
     "profile": "",
@@ -56,3 +56,21 @@ def id_time(pid):
     """LinkedIn ids embed milliseconds since epoch in the top bits."""
     from datetime import datetime, timezone
     return datetime.fromtimestamp((int(pid) >> 22) / 1000, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+# ---- escaping for generated HTML --------------------------------------------------
+# These pages are built to be published. Every value that reaches one has a context, and
+# each context needs its own escaping: never the other one, never none.
+
+def js_literal(s):
+    """A complete JS string literal, quotes included. '</' is broken up so no value can
+    close the <script> block that holds it."""
+    return json.dumps(s, ensure_ascii=False).replace("</", "<\\/")
+
+
+def js_data(obj):
+    """A JSON literal for embedding in <script>, with the same '</' protection."""
+    return json.dumps(obj, ensure_ascii=False, default=str).replace("</", "<\\/")
+
+
+def html_text(s):
+    """Escape for an HTML text or attribute slot."""
+    return html.escape(str(s))
